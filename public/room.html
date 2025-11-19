@@ -116,7 +116,7 @@
 
             <!-- PARTICIPANTES -->
             <div class="participants-container">
-                <h3>👥 Participantes (<span id="participantCount">1</span>)</h3>
+                <h3>👥 Participantes (<span id="participantCount">0</span>)</h3>
                 <div id="participantsList">
                     <!-- Lista de participantes aparece aquí -->
                 </div>
@@ -174,38 +174,26 @@
         // Mostrar código de sala en header
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
-        document.getElementById('roomCodeDisplay').textContent = roomCode || 'N/A';
-        
-        // Función para unirse a la sala
-        function joinRoom() {
-            const name = document.getElementById('welcomeNameInput').value.trim();
-            const password = document.getElementById('welcomePasswordInput').value;
+        const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+        if (roomCodeDisplay) {
+            roomCodeDisplay.textContent = roomCode || 'N/A';
             
-            if (!name) {
-                alert('⚠️ Por favor ingresa tu nombre');
-                return;
-            }
-            
-            // Guardar nombre en localStorage
-            localStorage.setItem('userName', name);
-            localStorage.setItem('roomPassword', password);
-            
-            // Cerrar modal y empezar
-            document.getElementById('welcomeModal').classList.remove('active');
-            startAudio();
+            // Copiar código al hacer click
+            roomCodeDisplay.addEventListener('click', () => {
+                navigator.clipboard.writeText(roomCode);
+                alert('✅ Código copiado al portapapeles');
+            });
         }
         
-        // Presionar Enter para unirse
-        document.getElementById('welcomeNameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') joinRoom();
-        });
-        
-        // Copiar código de sala
-        document.getElementById('roomCodeDisplay').addEventListener('click', () => {
-            navigator.clipboard.writeText(roomCode);
-            alert('✅ Código copiado al portapapeles');
-        });
+        // Presionar Enter en el input de nombre
+        const welcomeNameInput = document.getElementById('welcomeNameInput');
+        if (welcomeNameInput) {
+            welcomeNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') joinRoom();
+            });
+        }
     </script>
 </body>
 </html>
+
 
