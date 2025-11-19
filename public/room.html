@@ -4,114 +4,677 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OZYMEET - Trading Room</title>
-    <link rel="stylesheet" href="/trading-styles-fixed.css">
+    <link rel="stylesheet" href="/styles.css">
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <style>
+        /* ESTILOS INTEGRADOS PARA DISEÑO LIMPIO */
+        :root {
+            --dark-bg: #0a0e27;
+            --darker-bg: #050816;
+            --accent: #00ff88;
+            --panel-bg: rgba(10, 14, 39, 0.98);
+            --border: rgba(0, 255, 136, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--darker-bg) 0%, var(--dark-bg) 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TOP BAR */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border-bottom: 2px solid var(--border);
+            height: 60px;
+        }
+
+        .room-info h2 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 3px;
+        }
+
+        .room-code {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .connection-status {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 2px solid;
+        }
+
+        .connection-status.connected {
+            background: rgba(38, 166, 154, 0.2);
+            border-color: #26a69a;
+            color: #26a69a;
+        }
+
+        .recording-indicator {
+            display: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            background: rgba(239, 83, 80, 0.2);
+            border: 2px solid #ef5350;
+            color: #ef5350;
+        }
+
+        .recording-indicator.active {
+            display: block;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* SCREEN AREA */
+        .screen-area {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screen-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .no-screens {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-screens .icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .screen-wrapper {
+            flex: 1 1 auto;
+            min-width: 300px;
+            background: #000;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            position: relative;
+        }
+
+        .screen-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .screen-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: var(--panel-bg);
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        /* DRAW CANVAS */
+        #drawCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #drawCanvas.drawing-mode {
+            pointer-events: all;
+            cursor: crosshair;
+        }
+
+        /* DRAW TOOLS */
+        #drawTools {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--panel-bg);
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        #drawTools.active {
+            display: flex;
+        }
+
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .color-btn.selected {
+            border-color: var(--accent);
+            transform: scale(1.15);
+        }
+
+        .tool-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        /* BOTTOM BAR */
+        .bottom-bar {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 15px;
+            padding: 15px 20px;
+            background: var(--panel-bg);
+            border-top: 2px solid var(--border);
+            height: 140px;
+        }
+
+        .section-header {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        /* PARTICIPANTES */
+        #participantsList {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 90px;
+        }
+
+        .participant-card {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .participant-avatar-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .participant-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .participant-status-icons {
+            display: flex;
+            gap: 4px;
+            font-size: 0.7rem;
+        }
+
+        /* CONTROLES */
+        .controls-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 65px;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--dark-bg);
+        }
+
+        .control-btn.danger {
+            background: #ef5350;
+            border-color: #ef5350;
+        }
+
+        .btn-icon {
+            font-size: 1.3rem;
+        }
+
+        .btn-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* REACCIONES */
+        .reactions-quick {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .reaction-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        /* CHAT PANEL */
+        #chatPanel {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 380px;
+            height: 100vh;
+            background: var(--panel-bg);
+            border-left: 2px solid var(--border);
+            z-index: 200;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatPanel.active {
+            right: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .panel-header h3 {
+            color: var(--accent);
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #chatMessages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .chat-message.system {
+            background: rgba(255, 215, 0, 0.1);
+            border-left-color: #ffd700;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .send-btn {
+            padding: 10px 18px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: var(--dark-bg);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 300;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+        }
+
+        .modal-card h2 {
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .btn-primary {
+            padding: 12px 25px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: var(--dark-bg);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-secondary {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* WHITEBOARD */
+        #whiteboardContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 250;
+            display: none;
+            flex-direction: column;
+        }
+
+        #whiteboardContainer.active {
+            display: flex;
+        }
+
+        #whiteboardCanvas {
+            flex: 1;
+            background: white;
+            cursor: crosshair;
+        }
+
+        /* FLOATING REACTION */
+        .floating-reaction {
+            position: fixed;
+            font-size: 2.5rem;
+            z-index: 250;
+            animation: floatUp 3s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-350px) scale(1.4);
+                opacity: 0;
+            }
+        }
+
+        /* SYSTEM NOTIFICATION */
+        .system-notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 400;
+            transition: top 0.3s ease;
+            border: 2px solid;
+        }
+
+        .system-notification.show {
+            top: 20px;
+        }
+
+        .system-notification.success {
+            background: rgba(38, 166, 154, 0.95);
+            border-color: #26a69a;
+            color: white;
+        }
+
+        .system-notification.info {
+            background: rgba(0, 255, 136, 0.95);
+            border-color: var(--accent);
+            color: var(--dark-bg);
+        }
+
+        .system-notification.error {
+            background: rgba(239, 83, 80, 0.95);
+            border-color: #ef5350;
+            color: white;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .bottom-bar {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .participants-section,
+            .reactions-section {
+                display: none;
+            }
+        }
+    </style>
 </head>
-<body class="trading-theme">
+<body>
     
-    <!-- TOP BAR: Solo info esencial -->
+    <!-- TOP BAR -->
     <div class="top-bar">
         <div class="room-info">
             <h2>📊 OZYMEET Trading Room</h2>
             <span class="room-code">Sala: <span id="roomCode"></span></span>
         </div>
-        <div class="top-bar-right">
+        <div style="display: flex; gap: 15px; align-items: center;">
             <div id="connectionStatus" class="connection-status">🔴 Conectando...</div>
             <div id="recordingIndicator" class="recording-indicator">🔴 REC</div>
         </div>
     </div>
     
-    <!-- MAIN SCREEN AREA: Pantallas compartidas -->
+    <!-- SCREEN AREA -->
     <div class="screen-area">
         <div id="screenContainer" class="screen-container">
-            <div class="no-screens-message">
+            <div class="no-screens">
                 <span class="icon">🖥️</span>
                 <p>Esperando pantallas compartidas...</p>
                 <small>Haz click en "Compartir" para mostrar tus gráficos</small>
             </div>
         </div>
+        <canvas id="drawCanvas"></canvas>
         
-        <!-- Canvas para dibujar sobre pantallas -->
-        <canvas id="drawCanvas" class="draw-overlay"></canvas>
-        
-        <!-- Herramientas de dibujo (flotantes) -->
-        <div id="drawTools" class="draw-tools">
-            <div class="tools-header">🎨 Colores</div>
-            <button class="color-btn selected" style="background: #FF0000" onclick="setDrawColor('#FF0000')" title="Rojo"></button>
-            <button class="color-btn" style="background: #00FF00" onclick="setDrawColor('#00FF00')" title="Verde"></button>
-            <button class="color-btn" style="background: #0000FF" onclick="setDrawColor('#0000FF')" title="Azul"></button>
-            <button class="color-btn" style="background: #FFFF00" onclick="setDrawColor('#FFFF00')" title="Amarillo"></button>
-            <button class="color-btn" style="background: #FF00FF" onclick="setDrawColor('#FF00FF')" title="Magenta"></button>
-            <button class="color-btn" style="background: #FFFFFF" onclick="setDrawColor('#FFFFFF')" title="Blanco"></button>
-            <div class="tools-divider"></div>
+        <!-- DRAW TOOLS -->
+        <div id="drawTools">
+            <button class="color-btn selected" style="background: #FF0000" onclick="setDrawColor('#FF0000')"></button>
+            <button class="color-btn" style="background: #00FF00" onclick="setDrawColor('#00FF00')"></button>
+            <button class="color-btn" style="background: #0000FF" onclick="setDrawColor('#0000FF')"></button>
+            <button class="color-btn" style="background: #FFFF00" onclick="setDrawColor('#FFFF00')"></button>
+            <button class="color-btn" style="background: #FF00FF" onclick="setDrawColor('#FF00FF')"></button>
+            <button class="color-btn" style="background: #FFFFFF" onclick="setDrawColor('#FFFFFF')"></button>
             <button class="tool-btn" onclick="clearDrawing()">🗑️ Limpiar</button>
         </div>
     </div>
     
-    <!-- BOTTOM BAR: Todo lo importante aquí -->
+    <!-- BOTTOM BAR -->
     <div class="bottom-bar">
         
-        <!-- IZQUIERDA: Participantes -->
-        <div class="bottom-section participants-section">
-            <div class="section-header">
-                <span class="icon">👥</span>
-                <span>Traders (<span id="participantCount">0</span>)</span>
-            </div>
-            <div id="participantsList" class="participants-grid">
-                <!-- Participantes se agregan aquí -->
-            </div>
+        <!-- PARTICIPANTES -->
+        <div>
+            <div class="section-header">👥 Traders (<span id="participantCount">0</span>)</div>
+            <div id="participantsList"></div>
         </div>
         
-        <!-- CENTRO: Controles principales -->
-        <div class="bottom-section controls-section">
-            <button id="micBtn" class="control-btn" onclick="toggleMic()" title="Micrófono (M)">
+        <!-- CONTROLES -->
+        <div class="controls-section">
+            <button id="micBtn" class="control-btn" onclick="toggleMic()">
                 <span id="micIcon" class="btn-icon">🔇</span>
                 <span class="btn-label">Mic</span>
             </button>
-            
-            <button id="screenBtn" class="control-btn" onclick="toggleScreenShare()" title="Compartir (S)">
+            <button id="screenBtn" class="control-btn" onclick="toggleScreenShare()">
                 <span class="btn-icon">🖥️</span>
                 <span class="btn-label">Compartir</span>
             </button>
-            
-            <button id="drawBtn" class="control-btn" onclick="toggleDrawMode()" title="Dibujar (D)">
+            <button id="drawBtn" class="control-btn" onclick="toggleDrawMode()">
                 <span class="btn-icon">✏️</span>
                 <span class="btn-label">Dibujar</span>
             </button>
-            
-            <button id="whiteboardBtn" class="control-btn" onclick="toggleWhiteboard()" title="Pizarra (W)">
+            <button id="whiteboardBtn" class="control-btn" onclick="toggleWhiteboard()">
                 <span class="btn-icon">📊</span>
                 <span class="btn-label">Pizarra</span>
             </button>
-            
-            <button id="recordBtn" class="control-btn" onclick="toggleRecording()" title="Grabar (R)">
+            <button id="recordBtn" class="control-btn" onclick="toggleRecording()">
                 <span class="btn-icon">🔴</span>
                 <span class="btn-label">Grabar</span>
             </button>
-            
-            <button id="handBtn" class="control-btn" onclick="raiseHand()" title="Mano (H)">
+            <button id="handBtn" class="control-btn" onclick="raiseHand()">
                 <span class="btn-icon">✋</span>
                 <span class="btn-label">Mano</span>
             </button>
-            
-            <button class="control-btn" onclick="togglePanel('chat')" title="Chat (C)">
+            <button class="control-btn" onclick="document.getElementById('chatPanel').classList.toggle('active')">
                 <span class="btn-icon">💬</span>
                 <span class="btn-label">Chat</span>
             </button>
-            
-            <button class="control-btn" onclick="openSettings()" title="Config (G)">
+            <button class="control-btn" onclick="openSettings()">
                 <span class="btn-icon">⚙️</span>
                 <span class="btn-label">Config</span>
             </button>
         </div>
         
-        <!-- DERECHA: Reacciones rápidas -->
-        <div class="bottom-section reactions-section">
-            <div class="section-header">
-                <span class="icon">😀</span>
-                <span>Reacciones</span>
-            </div>
+        <!-- REACCIONES -->
+        <div>
+            <div class="section-header">😀 Reacciones</div>
             <div class="reactions-quick">
                 <button class="reaction-btn" onclick="sendReaction('🐂')" title="Bullish">🐂</button>
                 <button class="reaction-btn" onclick="sendReaction('🐻')" title="Bearish">🐻</button>
@@ -121,141 +684,81 @@
                 <button class="reaction-btn" onclick="sendReaction('💎')" title="Diamond">💎</button>
             </div>
         </div>
-        
     </div>
     
-    <!-- PANEL LATERAL: Chat (desliza desde derecha) -->
-    <div id="chatPanel" class="side-panel">
+    <!-- CHAT PANEL -->
+    <div id="chatPanel">
         <div class="panel-header">
             <h3>💬 Chat Traders</h3>
-            <button class="close-btn" onclick="togglePanel('chat')">✕</button>
+            <button class="close-btn" onclick="document.getElementById('chatPanel').classList.remove('active')">✕</button>
         </div>
-        <div id="chatMessages" class="chat-messages"></div>
+        <div id="chatMessages"></div>
         <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Mensaje..." onkeypress="handleChatKey(event)" maxlength="500">
-            <button onclick="sendChatMessage()" class="send-btn">Enviar</button>
+            <input type="text" id="chatInput" placeholder="Mensaje..." onkeypress="handleChatKey(event)">
+            <button class="send-btn" onclick="sendChatMessage()">Enviar</button>
         </div>
     </div>
     
-    <!-- MODAL: Bienvenida (se oculta al entrar) -->
+    <!-- MODAL BIENVENIDA -->
     <div id="welcomeModal" class="modal active">
         <div class="modal-card">
-            <div class="modal-header">
-                <h2>🎯 Bienvenido a OZYMEET</h2>
-                <p>Plataforma profesional de trading</p>
+            <h2>🎯 Bienvenido a OZYMEET</h2>
+            <div class="form-group">
+                <label>👤 Nombre de Trader</label>
+                <input type="text" id="welcomeNameInput" placeholder="Tu nombre...">
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>👤 Nombre de Trader</label>
-                    <input type="text" id="welcomeNameInput" placeholder="Tu nombre..." maxlength="50" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label>🔒 Contraseña de Sala (opcional)</label>
-                    <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay" autocomplete="off">
-                </div>
+            <div class="form-group">
+                <label>🔒 Contraseña (opcional)</label>
+                <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay">
             </div>
-            <div class="modal-footer">
-                <button class="btn-primary" onclick="joinRoom()">🚀 Entrar a la Sala</button>
-            </div>
+            <button class="btn-primary" onclick="joinRoom()">🚀 Entrar a la Sala</button>
         </div>
     </div>
     
-    <!-- MODAL: Configuración -->
+    <!-- MODAL SETTINGS -->
     <div id="settingsModal" class="modal">
-        <div class="modal-card settings-modal">
-            <div class="modal-header">
-                <h2>⚙️ Configuración</h2>
-                <button class="close-btn" onclick="closeSettings()">✕</button>
+        <div class="modal-card">
+            <h2>⚙️ Configuración</h2>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="userNameInput">
             </div>
-            <div class="modal-body">
-                
-                <div class="settings-group">
-                    <h3>👤 Perfil</h3>
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input type="text" id="userNameInput" placeholder="Tu nombre">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Avatar</label>
-                            <input type="text" id="avatarInput" placeholder="Ej: 👨‍💼 📊" maxlength="2">
-                        </div>
-                        <div class="form-group">
-                            <label>Color</label>
-                            <input type="color" id="avatarColorPicker" value="#4CAF50">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h3>🔊 Audio</h3>
-                    <div class="form-group">
-                        <label>Volumen General: <span id="masterVolumeValue">100%</span></label>
-                        <input type="range" id="masterVolumeSlider" min="0" max="100" value="100" oninput="updateMasterVolume(this.value)">
-                    </div>
-                    <div class="form-group">
-                        <label>Volumen Micrófono: <span id="micVolumeValue">100%</span></label>
-                        <input type="range" id="micVolumeSlider" min="0" max="100" value="100" oninput="updateMicVolume(this.value)">
-                    </div>
-                </div>
-                
-                <div class="settings-group">
-                    <h3>👁️ Vista</h3>
-                    <div class="form-group">
-                        <label>Modo de Vista</label>
-                        <select id="viewModeSelect" onchange="changeViewMode(this.value)">
-                            <option value="grid">Grid (Cuadrícula)</option>
-                            <option value="speaker">Speaker (Principal)</option>
-                            <option value="compact">Compact (Compacto)</option>
-                        </select>
-                    </div>
-                </div>
-                
+            <div class="form-group">
+                <label>Avatar</label>
+                <input type="text" id="avatarInput" placeholder="Ej: 👨‍💼 📊">
             </div>
-            <div class="modal-footer">
+            <div class="form-group">
+                <label>Color de Avatar</label>
+                <input type="color" id="avatarColorPicker" value="#4CAF50">
+            </div>
+            <div class="form-group">
+                <label>Volumen General: <span id="masterVolumeValue">100%</span></label>
+                <input type="range" id="masterVolumeSlider" min="0" max="100" value="100" oninput="updateMasterVolume(this.value)">
+            </div>
+            <div class="form-group">
+                <label>Volumen Micrófono: <span id="micVolumeValue">100%</span></label>
+                <input type="range" id="micVolumeSlider" min="0" max="100" value="100" oninput="updateMicVolume(this.value)">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn-secondary" onclick="closeSettings()">Cancelar</button>
                 <button class="btn-primary" onclick="saveSettings()">💾 Guardar</button>
             </div>
         </div>
     </div>
     
-    <!-- WHITEBOARD (modal fullscreen) -->
-    <div id="whiteboardContainer" class="whiteboard-modal">
-        <div class="whiteboard-header">
+    <!-- WHITEBOARD -->
+    <div id="whiteboardContainer">
+        <div class="panel-header">
             <h3>📊 Pizarra Colaborativa</h3>
             <button class="close-btn" onclick="toggleWhiteboard()">✕</button>
         </div>
-        <canvas id="whiteboardCanvas" class="whiteboard-canvas"></canvas>
+        <canvas id="whiteboardCanvas"></canvas>
     </div>
     
     <script src="/client.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const roomCodeSpan = document.getElementById('roomCode');
-        if (roomCodeSpan) {
-            roomCodeSpan.textContent = urlParams.get('room') || 'Unknown';
-        }
-        
-        function togglePanel(panel) {
-            const chatPanel = document.getElementById('chatPanel');
-            chatPanel.classList.toggle('active');
-        }
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT') return;
-            
-            switch(e.key.toLowerCase()) {
-                case 'm': toggleMic(); break;
-                case 's': toggleScreenShare(); break;
-                case 'd': toggleDrawMode(); break;
-                case 'w': toggleWhiteboard(); break;
-                case 'r': toggleRecording(); break;
-                case 'h': raiseHand(); break;
-                case 'c': togglePanel('chat'); break;
-                case 'g': openSettings(); break;
-            }
-        });
+        document.getElementById('roomCode').textContent = urlParams.get('room') || 'Unknown';
     </script>
 </body>
 </html>
