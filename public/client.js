@@ -1,9 +1,9 @@
 /**
  * ╔═══════════════════════════════════════════════════════════╗
- * ║                  🎯 OZYMEET CLIENT PRO 🎯                 ║
- * ║           Professional WebRTC Client Implementation       ║
- * ║                      Version 2.1 FIXED                    ║
- * ║           ✅ Microphone Fix + ALL Features Intact         ║
+ * ║               🎯 OZYMEET ULTIMATE PRO 🎯                  ║
+ * ║         Professional Trading WebRTC Platform              ║
+ * ║                    Version 3.0 ULTIMATE                   ║
+ * ║   ✅ Audio Fix + Trading Features + Collaborative Draw    ║
  * ╚═══════════════════════════════════════════════════════════╝
  */
 
@@ -23,6 +23,7 @@ const roomId = new URLSearchParams(window.location.search).get('room');
 const peers = {};
 const screenPeers = {};
 const participants = new Map();
+const audioElements = new Map(); // 🔧 Track audio elements properly
 
 let localStream = null;
 let screenStream = null;
@@ -34,13 +35,18 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let reconnectAttempts = 0;
 let isReconnecting = false;
+let viewMode = 'grid'; // grid, speaker, compact
+let masterVolume = 1.0;
+let micVolume = 1.0;
 
 let currentUser = {
     id: null,
-    name: localStorage.getItem('userName') || 'Usuario',
+    name: localStorage.getItem('userName') || 'Trader',
     role: 'participant',
     handRaised: false,
-    isConnected: false
+    isConnected: false,
+    avatar: localStorage.getItem('userAvatar') || '👤',
+    avatarColor: localStorage.getItem('avatarColor') || '#4CAF50'
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -53,7 +59,8 @@ const Logger = {
     error: (msg, data = '') => console.error(`[${new Date().toISOString()}] ❌ ${msg}`, data),
     warn: (msg, data = '') => console.warn(`[${new Date().toISOString()}] ⚠️  ${msg}`, data),
     peer: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🔗 ${msg}`, data),
-    audio: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🔊 ${msg}`, data)
+    audio: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🔊 ${msg}`, data),
+    debug: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🐛 ${msg}`, data)
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -61,7 +68,7 @@ const Logger = {
 // ═══════════════════════════════════════════════════════════
 
 window.addEventListener('DOMContentLoaded', function() {
-    Logger.success('DOM fully loaded - Initializing OZYMEET');
+    Logger.success('DOM fully loaded - Initializing OZYMEET ULTIMATE PRO');
     initializeApp();
 });
 
@@ -78,6 +85,10 @@ function initializeApp() {
     let lastX = 0;
     let lastY = 0;
     
+    // Load saved volume preferences
+    masterVolume = parseFloat(localStorage.getItem('masterVolume') || '1.0');
+    micVolume = parseFloat(localStorage.getItem('micVolume') || '1.0');
+    
     // ═══════════════════════════════════════════════════════
     // SOCKET CONNECTION HANDLERS
     // ═══════════════════════════════════════════════════════
@@ -91,10 +102,8 @@ function initializeApp() {
         Logger.success(`Connected to server: ${socket.id}`);
         updateConnectionStatus('connected');
         
-        // If we had joined a room before, try to rejoin
         if (roomId && currentUser.name) {
             Logger.info('Attempting to rejoin room after reconnection');
-            // The welcome modal will handle rejoin
         }
     });
     
@@ -104,7 +113,6 @@ function initializeApp() {
         updateConnectionStatus('disconnected');
         
         if (reason === 'io server disconnect') {
-            // Server initiated disconnect, try to reconnect
             socket.connect();
         }
     });
@@ -127,7 +135,7 @@ function initializeApp() {
     });
     
     // ═══════════════════════════════════════════════════════
-    // ROOM JOIN - 🔧 FIXED: Audio inicia DESPUÉS de confirmar entrada
+    // ROOM JOIN - Audio starts AFTER room confirmation
     // ═══════════════════════════════════════════════════════
     
     window.joinRoom = function() {
@@ -166,85 +174,81 @@ function initializeApp() {
             userName: name,
             password: password
         });
-        
-        // 🔧 FIX: NO iniciar audio aquí - esperar confirmación del servidor
-        // El audio se iniciará en el evento 'joined-room'
     };
     
-    // ✅ CRITICAL: Handle joined-room with existing users + 🔧 AUDIO FIX
     socket.on('joined-room', ({ success, userData, roomData, existingUsers }) => {
         if (!success) {
             Logger.error('Failed to join room');
             return;
         }
         
-        Logger.success(`Successfully joined room: ${roomData.id}`);
+        Logger.success(`✅ Successfully joined room: ${roomData.id}`);
         Logger.info(`Room stats: ${roomData.userCount}/${roomData.maxUsers} users`);
         
-        // Update current user data
         currentUser.id = userData.userId;
         currentUser.role = userData.role;
         
-        // ✅ CRITICAL FIX: Process existing users FIRST
         if (existingUsers && existingUsers.length > 0) {
             Logger.info(`📥 Found ${existingUsers.length} existing users in room`);
             
             existingUsers.forEach((user, index) => {
-                Logger.peer(`Adding existing user [${index + 1}/${existingUsers.length}]: ${user.userName} (${user.userId.slice(0, 8)}...)`);
+                Logger.peer(`[${index + 1}/${existingUsers.length}] ${user.userName} (${user.userId.slice(0, 8)}...)`);
                 
-                // Add to participants map
                 participants.set(user.userId, {
                     userId: user.userId,
                     userName: user.userName,
                     role: user.role,
                     handRaised: user.handRaised || false,
                     isMuted: user.isMuted || false,
-                    isReady: user.isReady || false
+                    isReady: user.isReady || false,
+                    avatar: user.avatar || '👤',
+                    avatarColor: user.avatarColor || '#4CAF50'
                 });
             });
             
-            // Update UI immediately
-            updateParticipantsList();
-            
-            showSystemNotification(`✅ Te uniste a la sala con ${existingUsers.length} persona(s)`, 'success');
+            updateParticipantsUI();
+            showSystemNotification(`✅ Te uniste con ${existingUsers.length} trader(s)`, 'success');
         } else {
             Logger.info('You are the first user in the room');
-            updateParticipantsList();
-            showSystemNotification('✅ Eres el primero en la sala', 'info');
+            updateParticipantsUI();
+            showSystemNotification('✅ Eres el primer trader en la sala', 'info');
         }
         
-        // 🔧 FIX: Iniciar audio DESPUÉS de confirmar entrada exitosa a la sala
-        Logger.info('🎤 Starting audio after successful room join...');
+        // 🔧 CRITICAL FIX: Start audio AFTER room confirmation
+        Logger.info('🎤 Starting audio stream after room join...');
         setTimeout(() => {
             startAudioWithRetry();
-        }, 500);
+        }, 800);
     });
     
     // ═══════════════════════════════════════════════════════
-    // USER CONNECTED - New user joins
+    // USER CONNECTED
     // ═══════════════════════════════════════════════════════
     
     socket.on('user-connected', (userData) => {
-        Logger.success(`New user connected: ${userData.userName} (${userData.userId.slice(0, 8)}...)`);
+        Logger.success(`New trader: ${userData.userName} (${userData.userId.slice(0, 8)}...)`);
         
-        // Add to participants
         participants.set(userData.userId, {
             userId: userData.userId,
             userName: userData.userName,
             role: userData.role || 'participant',
             handRaised: userData.handRaised || false,
             isMuted: userData.isMuted || false,
-            isReady: userData.isReady || false
+            isReady: userData.isReady || false,
+            avatar: userData.avatar || '👤',
+            avatarColor: userData.avatarColor || '#4CAF50'
         });
         
-        updateParticipantsList();
+        updateParticipantsUI();
         
-        // Connect via WebRTC (as initiator since we were here first)
         if (localStream) {
+            Logger.peer(`Initiating connection to ${userData.userName}...`);
             connectToNewUser(userData.userId);
+        } else {
+            Logger.warn('Local stream not ready yet for new user');
         }
         
-        addSystemMessage(`${userData.userName} se unió a la sala`);
+        addSystemMessage(`${userData.userName} se unió al trading room`);
         showSystemNotification(`👋 ${userData.userName} se unió`, 'info');
     });
     
@@ -256,9 +260,9 @@ function initializeApp() {
         const user = participants.get(userId);
         const userName = user ? user.userName : 'Usuario';
         
-        Logger.warn(`User disconnected: ${userName} (${userId.slice(0, 8)}...)`);
+        Logger.warn(`User left: ${userName}`);
         
-        // Clean up peer connections
+        // Clean up peer
         if (peers[userId]) {
             peers[userId].destroy();
             delete peers[userId];
@@ -270,28 +274,30 @@ function initializeApp() {
             removeScreenVideo(userId);
         }
         
-        // Remove audio element
-        const audioElement = document.getElementById(`audio-${userId}`);
-        if (audioElement) audioElement.remove();
+        // 🔧 FIX: Clean up audio element properly
+        cleanupAudioElement(userId);
         
-        // Remove from participants
         participants.delete(userId);
-        updateParticipantsList();
+        updateParticipantsUI();
         
-        addSystemMessage(`${userName} salió de la sala`);
+        addSystemMessage(`${userName} salió del trading room`);
         showSystemNotification(`👋 ${userName} salió`, 'info');
     });
     
     // ═══════════════════════════════════════════════════════
-    // WEBRTC SIGNALING
+    // WEBRTC SIGNALING - 🔧 ENHANCED WITH BETTER AUDIO HANDLING
     // ═══════════════════════════════════════════════════════
     
     socket.on('signal', ({ from, signal }) => {
-        Logger.peer(`Received signal from ${from.slice(0, 8)}...`);
+        Logger.peer(`📡 Received signal from ${from.slice(0, 8)}...`);
+        
+        if (!localStream) {
+            Logger.error('❌ Cannot process signal - no local stream');
+            return;
+        }
         
         if (!peers[from]) {
-            // Create new peer connection (non-initiator)
-            Logger.peer(`Creating peer connection as non-initiator for ${from.slice(0, 8)}...`);
+            Logger.peer(`Creating NON-INITIATOR peer for ${from.slice(0, 8)}...`);
             
             const peer = new SimplePeer({ 
                 initiator: false, 
@@ -300,48 +306,57 @@ function initializeApp() {
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
                     ]
                 }
             });
             
-            peer.on('signal', (sig) => {
-                Logger.peer(`Sending signal back to ${from.slice(0, 8)}...`);
-                socket.emit('signal', { to: from, signal: sig, roomId });
-            });
-            
-            peer.on('stream', (stream) => {
-                Logger.audio(`Receiving audio stream from ${from.slice(0, 8)}...`);
-                playAudioStream(from, stream);
-            });
-            
-            peer.on('connect', () => {
-                Logger.success(`Peer connection established with ${from.slice(0, 8)}...`);
-            });
-            
-            peer.on('error', (err) => {
-                Logger.error(`Peer error with ${from.slice(0, 8)}...:`, err.message);
-            });
-            
-            peer.on('close', () => {
-                Logger.warn(`Peer connection closed with ${from.slice(0, 8)}...`);
-            });
-            
+            setupPeerHandlers(peer, from);
             peers[from] = peer;
+            
+            Logger.debug('Signaling peer with received signal...');
             peer.signal(signal);
+            
         } else {
-            // Existing peer, just signal
+            Logger.debug('Peer exists, signaling...');
             peers[from].signal(signal);
         }
     });
     
+    function setupPeerHandlers(peer, userId) {
+        peer.on('signal', (sig) => {
+            Logger.peer(`📤 Sending signal to ${userId.slice(0, 8)}...`);
+            socket.emit('signal', { to: userId, signal: sig, roomId });
+        });
+        
+        peer.on('stream', (stream) => {
+            Logger.audio(`🔊 RECEIVED AUDIO STREAM from ${userId.slice(0, 8)}...`);
+            Logger.debug('Stream tracks:', stream.getTracks().length);
+            playAudioStream(userId, stream);
+        });
+        
+        peer.on('connect', () => {
+            Logger.success(`✅ Peer connected with ${userId.slice(0, 8)}...`);
+        });
+        
+        peer.on('error', (err) => {
+            Logger.error(`❌ Peer error with ${userId.slice(0, 8)}...:`, err.message);
+        });
+        
+        peer.on('close', () => {
+            Logger.warn(`Peer closed with ${userId.slice(0, 8)}...`);
+            cleanupAudioElement(userId);
+        });
+    }
+    
     // ═══════════════════════════════════════════════════════
-    // SCREEN SHARING SIGNALS
+    // SCREEN SHARING
     // ═══════════════════════════════════════════════════════
     
     socket.on('screen-share-started', ({ userId, userName }) => {
         Logger.info(`Screen share started by ${userName}`);
-        showSystemNotification(`🖥️ ${userName} está compartiendo pantalla`, 'info');
+        showSystemNotification(`🖥️ ${userName} está compartiendo gráficos`, 'info');
     });
     
     socket.on('screen-signal', ({ from, signal }) => {
@@ -387,7 +402,7 @@ function initializeApp() {
         const user = participants.get(userId);
         if (user) {
             user.isMuted = isMuted;
-            updateParticipantsList();
+            updateParticipantsUI();
         }
     });
     
@@ -395,7 +410,7 @@ function initializeApp() {
         const user = participants.get(userId);
         if (user) {
             user.handRaised = raised;
-            updateParticipantsList();
+            updateParticipantsUI();
             if (raised) {
                 addSystemMessage(`✋ ${userName} levantó la mano`);
                 showSystemNotification(`✋ ${userName} levantó la mano`, 'info');
@@ -409,7 +424,7 @@ function initializeApp() {
     
     socket.on('reaction', ({ userName, emoji }) => {
         showFloatingReaction(emoji);
-        addSystemMessage(`${userName} reaccionó con ${emoji}`);
+        addSystemMessage(`${userName}: ${emoji}`);
     });
     
     socket.on('draw-line', ({ fromX, fromY, toX, toY, color }) => {
@@ -428,31 +443,33 @@ function initializeApp() {
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
     
-    socket.on('user-updated', ({ userId, userName, role }) => {
+    socket.on('user-updated', ({ userId, userName, role, avatar, avatarColor }) => {
         const user = participants.get(userId);
         if (user) {
             user.userName = userName;
             user.role = role;
-            updateParticipantsList();
+            user.avatar = avatar || user.avatar;
+            user.avatarColor = avatarColor || user.avatarColor;
+            updateParticipantsUI();
         }
     });
     
     socket.on('new-host', ({ userId, userName }) => {
-        Logger.info(`New host assigned: ${userName}`);
+        Logger.info(`New host: ${userName}`);
         const user = participants.get(userId);
         if (user) {
             user.role = 'host';
-            updateParticipantsList();
+            updateParticipantsUI();
         }
         if (userId === currentUser.id) {
             currentUser.role = 'host';
             showSystemNotification('👑 Ahora eres el host', 'success');
         }
-        addSystemMessage(`👑 ${userName} es ahora el host`);
+        addSystemMessage(`👑 ${userName} es el nuevo host`);
     });
     
     socket.on('server-shutdown', ({ message }) => {
-        Logger.warn('Server shutdown notification:', message);
+        Logger.warn('Server shutdown:', message);
         showSystemNotification(message, 'warning');
     });
     
@@ -490,7 +507,7 @@ function initializeApp() {
                 isMuted: !isMicActive
             });
             
-            Logger.info(`Microphone ${isMicActive ? 'enabled' : 'muted'}`);
+            Logger.info(`Microphone ${isMicActive ? 'ON' : 'MUTED'}`);
         }
     };
     
@@ -513,7 +530,6 @@ function initializeApp() {
                     userName: currentUser.name
                 });
                 
-                // Create screen peer for each connected user
                 Object.keys(peers).forEach(userId => {
                     const screenPeer = new SimplePeer({ 
                         initiator: true, 
@@ -534,16 +550,15 @@ function initializeApp() {
                     screenPeers[userId] = screenPeer;
                 });
                 
-                // Handle screen share end
                 screenStream.getVideoTracks()[0].onended = () => {
                     stopScreenShare();
                 };
                 
                 Logger.success('Screen sharing started');
-                showSystemNotification('🖥️ Compartiendo pantalla', 'success');
+                showSystemNotification('🖥️ Compartiendo gráficos', 'success');
                 
             } catch (err) {
-                Logger.error('Failed to start screen share:', err.message);
+                Logger.error('Failed to share screen:', err.message);
                 alert('⚠️ No se pudo compartir la pantalla');
             }
         } else {
@@ -563,14 +578,13 @@ function initializeApp() {
         
         socket.emit('screen-share-stop', { roomId: roomId, userId: currentUser.id });
         
-        // Clean up screen peers
         Object.values(screenPeers).forEach(peer => peer.destroy());
         Object.keys(screenPeers).forEach(key => delete screenPeers[key]);
         
         removeScreenVideo(currentUser.id);
         
         Logger.info('Screen sharing stopped');
-        showSystemNotification('🖥️ Compartir pantalla detenido', 'info');
+        showSystemNotification('🖥️ Dejó de compartir', 'info');
     }
     
     window.toggleDrawMode = function() {
@@ -584,10 +598,11 @@ function initializeApp() {
                 drawBtn.classList.add('active');
                 drawTools.classList.add('active');
                 canvas.classList.add('drawing-mode');
+                showSystemNotification('✏️ Modo dibujo activado (todos pueden dibujar)', 'info');
             } else {
                 drawBtn.classList.remove('active');
                 drawTools.classList.remove('active');
-                canvas.classList.remove('active');
+                canvas.classList.remove('drawing-mode');
             }
         }
     };
@@ -671,7 +686,7 @@ function initializeApp() {
             Logger.success('Recording started');
             
         } catch (err) {
-            Logger.error('Failed to start recording:', err.message);
+            Logger.error('Recording failed:', err.message);
             alert('⚠️ No se pudo iniciar la grabación');
         }
     }
@@ -723,7 +738,7 @@ function initializeApp() {
         if (!message) return;
         
         if (message.length > 500) {
-            alert('⚠️ Mensaje demasiado largo (máximo 500 caracteres)');
+            alert('⚠️ Mensaje muy largo (máx 500 chars)');
             return;
         }
         
@@ -753,13 +768,29 @@ function initializeApp() {
         });
         
         showFloatingReaction(emoji);
+        addSystemMessage(`${currentUser.name}: ${emoji}`);
     };
     
     window.openSettings = function() {
         const modal = document.getElementById('settingsModal');
         const nameInput = document.getElementById('userNameInput');
+        const masterVolumeSlider = document.getElementById('masterVolumeSlider');
+        const micVolumeSlider = document.getElementById('micVolumeSlider');
+        const viewModeSelect = document.getElementById('viewModeSelect');
+        const avatarInput = document.getElementById('avatarInput');
+        
         if (modal) modal.classList.add('active');
         if (nameInput) nameInput.value = currentUser.name;
+        if (masterVolumeSlider) {
+            masterVolumeSlider.value = masterVolume * 100;
+            document.getElementById('masterVolumeValue').textContent = Math.round(masterVolume * 100) + '%';
+        }
+        if (micVolumeSlider) {
+            micVolumeSlider.value = micVolume * 100;
+            document.getElementById('micVolumeValue').textContent = Math.round(micVolume * 100) + '%';
+        }
+        if (viewModeSelect) viewModeSelect.value = viewMode;
+        if (avatarInput) avatarInput.value = currentUser.avatar;
     };
     
     window.closeSettings = function() {
@@ -767,39 +798,84 @@ function initializeApp() {
         if (modal) modal.classList.remove('active');
     };
     
+    window.updateMasterVolume = function(value) {
+        masterVolume = value / 100;
+        localStorage.setItem('masterVolume', masterVolume);
+        document.getElementById('masterVolumeValue').textContent = value + '%';
+        
+        // Apply to all audio elements
+        audioElements.forEach((audio) => {
+            if (audio && !audio.paused) {
+                audio.volume = masterVolume;
+            }
+        });
+        
+        Logger.info(`Master volume: ${value}%`);
+    };
+    
+    window.updateMicVolume = function(value) {
+        micVolume = value / 100;
+        localStorage.setItem('micVolume', micVolume);
+        document.getElementById('micVolumeValue').textContent = value + '%';
+        
+        if (localStream) {
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                // Note: This requires AudioContext for precise control
+                Logger.info(`Mic volume: ${value}%`);
+            }
+        }
+    };
+    
+    window.changeViewMode = function(mode) {
+        viewMode = mode;
+        const participantsContainer = document.getElementById('participantsContainer');
+        
+        if (participantsContainer) {
+            participantsContainer.className = `view-mode-${mode}`;
+        }
+        
+        Logger.info(`View mode: ${mode}`);
+    };
+    
     window.saveSettings = function() {
         const newName = document.getElementById('userNameInput')?.value.trim();
-        const newPassword = document.getElementById('roomPasswordInput')?.value;
-        const newRole = document.getElementById('roleSelect')?.value;
+        const newAvatar = document.getElementById('avatarInput')?.value || '👤';
+        const newColor = document.getElementById('avatarColorPicker')?.value || '#4CAF50';
         
         if (newName && newName.length > 0) {
             currentUser.name = newName;
-            currentUser.role = newRole || 'participant';
+            currentUser.avatar = newAvatar;
+            currentUser.avatarColor = newColor;
+            
             localStorage.setItem('userName', newName);
-            if (newPassword) localStorage.setItem('roomPassword', newPassword);
+            localStorage.setItem('userAvatar', newAvatar);
+            localStorage.setItem('avatarColor', newColor);
             
             socket.emit('update-user', {
                 roomId,
                 userId: currentUser.id,
                 userName: newName,
-                role: currentUser.role
+                role: currentUser.role,
+                avatar: newAvatar,
+                avatarColor: newColor
             });
             
-            updateParticipantsList();
+            updateParticipantsUI();
             addSystemMessage(`✅ Configuración actualizada`);
-            showSystemNotification('✅ Configuración actualizada', 'success');
+            showSystemNotification('✅ Configuración guardada', 'success');
         }
         
         closeSettings();
     };
     
     // ═══════════════════════════════════════════════════════
-    // 🔧 AUDIO FUNCTIONS - WITH RETRY LOGIC
+    // 🔧 AUDIO FUNCTIONS - CRITICAL FIX WITH RETRY
     // ═══════════════════════════════════════════════════════
     
     async function startAudioWithRetry(retryCount = 0, maxRetries = 3) {
         try {
-            Logger.info(`Requesting microphone access... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+            Logger.info(`🎤 Requesting microphone... (attempt ${retryCount + 1}/${maxRetries + 1})`);
             
             localStream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
@@ -817,60 +893,62 @@ function initializeApp() {
             if (micBtn) micBtn.classList.add('active');
             if (micIcon) micIcon.textContent = '🎤';
             
-            Logger.success('✅ Microphone access granted - Audio stream ready');
+            Logger.success('✅✅ Microphone GRANTED - Stream ready');
+            Logger.debug('Audio tracks:', localStream.getAudioTracks().length);
             
-            // Notify server that we're ready
             socket.emit('user-ready', {
                 roomId: roomId,
                 userName: currentUser.name,
                 role: currentUser.role
             });
             
-            // Connect to any existing users that we haven't connected to yet
-            Logger.peer(`Checking for existing users to connect (${participants.size} participants)`);
+            // Connect to existing participants
+            Logger.peer(`Connecting to ${participants.size} existing participants...`);
             
+            let connectedCount = 0;
             participants.forEach((userData, userId) => {
                 if (!peers[userId]) {
-                    Logger.peer(`Connecting to existing user after audio start: ${userData.userName}`);
+                    Logger.peer(`→ Connecting to ${userData.userName}...`);
                     connectToNewUser(userId);
+                    connectedCount++;
                 }
             });
             
-            if (participants.size === 0) {
-                Logger.info('No existing participants to connect to yet');
+            if (connectedCount === 0) {
+                Logger.info('No existing participants to connect');
+            } else {
+                Logger.success(`Initiated ${connectedCount} peer connections`);
             }
             
         } catch (err) {
-            Logger.error(`Failed to access microphone (attempt ${retryCount + 1}):`, err.message);
+            Logger.error(`❌ Microphone access failed (attempt ${retryCount + 1}):`, err.message);
             
-            // Retry logic
             if (retryCount < maxRetries) {
-                const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
                 Logger.warn(`Retrying in ${delay}ms...`);
                 
                 setTimeout(() => {
                     startAudioWithRetry(retryCount + 1, maxRetries);
                 }, delay);
             } else {
-                // Max retries reached
-                Logger.error('❌ Max retries reached. Could not access microphone.');
-                alert('⚠️ No se pudo acceder al micrófono después de varios intentos.\n\nVerifica:\n1. Permisos del navegador\n2. Ninguna otra aplicación está usando el micrófono\n3. El micrófono está conectado correctamente');
+                Logger.error('❌ Max retries reached');
+                alert('⚠️ No se pudo acceder al micrófono.\n\nVerifica:\n1. Permisos del navegador\n2. Ninguna otra app usa el micrófono\n3. El micrófono está conectado');
             }
         }
     }
     
     function connectToNewUser(userId) {
         if (!localStream) {
-            Logger.warn('Cannot connect to user - no local stream yet');
+            Logger.error('❌ Cannot connect - no local stream');
             return;
         }
         
         if (peers[userId]) {
-            Logger.warn(`Peer connection already exists for ${userId.slice(0, 8)}...`);
+            Logger.warn(`Peer already exists for ${userId.slice(0, 8)}...`);
             return;
         }
         
-        Logger.peer(`Creating peer connection as initiator for ${userId.slice(0, 8)}...`);
+        Logger.peer(`Creating INITIATOR peer for ${userId.slice(0, 8)}...`);
         
         const peer = new SimplePeer({ 
             initiator: true, 
@@ -879,66 +957,68 @@ function initializeApp() {
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
                 ]
             }
         });
         
-        peer.on('signal', (signal) => {
-            Logger.peer(`Sending signal to ${userId.slice(0, 8)}...`);
-            socket.emit('signal', { to: userId, signal, roomId });
-        });
-        
-        peer.on('stream', (stream) => {
-            Logger.audio(`Receiving audio stream from ${userId.slice(0, 8)}...`);
-            playAudioStream(userId, stream);
-        });
-        
-        peer.on('connect', () => {
-            Logger.success(`Peer connection established with ${userId.slice(0, 8)}...`);
-        });
-        
-        peer.on('error', (err) => {
-            Logger.error(`Peer error with ${userId.slice(0, 8)}...:`, err.message);
-        });
-        
-        peer.on('close', () => {
-            Logger.warn(`Peer connection closed with ${userId.slice(0, 8)}...`);
-        });
-        
+        setupPeerHandlers(peer, userId);
         peers[userId] = peer;
     }
     
     function playAudioStream(userId, stream) {
-        // Remove existing audio element if any
-        const existingAudio = document.getElementById(`audio-${userId}`);
-        if (existingAudio) {
-            Logger.warn(`Removing existing audio element for ${userId.slice(0, 8)}...`);
-            existingAudio.remove();
-        }
+        Logger.audio(`🔊 Setting up audio playback for ${userId.slice(0, 8)}...`);
+        
+        // Clean up existing audio element
+        cleanupAudioElement(userId);
         
         const audio = document.createElement('audio');
         audio.id = `audio-${userId}`;
         audio.srcObject = stream;
         audio.autoplay = true;
-        audio.volume = 1.0;
+        audio.volume = masterVolume;
         audio.style.display = 'none';
         
         audio.addEventListener('loadedmetadata', () => {
+            Logger.audio(`📻 Metadata loaded for ${userId.slice(0, 8)}...`);
             audio.play()
                 .then(() => {
-                    Logger.audio(`Audio playing for ${userId.slice(0, 8)}...`);
+                    Logger.success(`✅✅ AUDIO PLAYING for ${userId.slice(0, 8)}...`);
                 })
                 .catch(err => {
-                    Logger.error(`Failed to play audio for ${userId.slice(0, 8)}...:`, err.message);
+                    Logger.error(`❌ Failed to play audio for ${userId.slice(0, 8)}...:`, err.message);
+                    
+                    // Try to play again after user interaction
+                    document.addEventListener('click', () => {
+                        audio.play().catch(e => Logger.error('Retry failed:', e));
+                    }, { once: true });
                 });
         });
         
         audio.addEventListener('error', (e) => {
-            Logger.error(`Audio error for ${userId.slice(0, 8)}...:`, e);
+            Logger.error(`❌ Audio error for ${userId.slice(0, 8)}...:`, e);
+        });
+        
+        audio.addEventListener('playing', () => {
+            Logger.success(`▶️ Audio started playing for ${userId.slice(0, 8)}...`);
         });
         
         document.body.appendChild(audio);
+        audioElements.set(userId, audio);
+        
+        Logger.debug(`Audio element created and added to DOM for ${userId.slice(0, 8)}`);
+    }
+    
+    function cleanupAudioElement(userId) {
+        const existingAudio = document.getElementById(`audio-${userId}`);
+        if (existingAudio) {
+            Logger.debug(`Cleaning up audio element for ${userId.slice(0, 8)}...`);
+            existingAudio.pause();
+            existingAudio.srcObject = null;
+            existingAudio.remove();
+        }
+        audioElements.delete(userId);
     }
     
     // ═══════════════════════════════════════════════════════
@@ -963,7 +1043,7 @@ function initializeApp() {
         
         const label = document.createElement('div');
         label.className = 'screen-label';
-        label.textContent = `📺 ${userName}`;
+        label.textContent = `📊 ${userName} - Charts`;
         
         wrapper.appendChild(video);
         wrapper.appendChild(label);
@@ -1002,9 +1082,7 @@ function initializeApp() {
         if (!messagesDiv) return;
         
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
-        messageDiv.style.background = 'rgba(255,255,255,0.05)';
-        messageDiv.style.fontStyle = 'italic';
+        messageDiv.className = 'chat-message system';
         messageDiv.innerHTML = `<div class="text">ℹ️ ${text}</div>`;
         
         messagesDiv.appendChild(messageDiv);
@@ -1022,73 +1100,76 @@ function initializeApp() {
         setTimeout(() => reaction.remove(), 3000);
     }
     
-    function updateParticipantsList() {
+    function updateParticipantsUI() {
         const listDiv = document.getElementById('participantsList');
         const countSpan = document.getElementById('participantCount');
         
         if (!listDiv || !countSpan) {
-            Logger.warn('Participants list elements not found');
+            Logger.warn('Participants UI elements not found');
             return;
         }
         
-        const totalCount = participants.size + 1; // +1 for current user
+        const totalCount = participants.size + 1;
         listDiv.innerHTML = '';
         countSpan.textContent = totalCount;
         
-        Logger.info(`Updating participants list: ${totalCount} total users`);
+        Logger.info(`📊 Updating participants UI: ${totalCount} traders`);
         
-        // Add current user first
-        addParticipantToList(
+        // Add current user
+        addParticipantCard(
             currentUser.id, 
             currentUser.name, 
             currentUser.role, 
             currentUser.handRaised, 
             false,
-            true
+            true,
+            currentUser.avatar,
+            currentUser.avatarColor
         );
         
-        // Add other participants
+        // Add others
         participants.forEach((userData, userId) => {
-            addParticipantToList(
+            addParticipantCard(
                 userId, 
                 userData.userName, 
                 userData.role || 'participant', 
                 userData.handRaised, 
                 userData.isMuted,
-                false
+                false,
+                userData.avatar || '👤',
+                userData.avatarColor || '#4CAF50'
             );
         });
     }
     
-    function addParticipantToList(userId, userName, role, handRaised, isMuted, isSelf) {
+    function addParticipantCard(userId, userName, role, handRaised, isMuted, isSelf, avatar, avatarColor) {
         const listDiv = document.getElementById('participantsList');
         if (!listDiv) return;
         
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'participant-item';
-        itemDiv.id = `participant-${userId}`;
+        const card = document.createElement('div');
+        card.className = 'participant-card';
+        card.id = `participant-${userId}`;
         
-        const initial = userName.charAt(0).toUpperCase();
         const roleIcon = role === 'host' ? '👑' : '';
         const handIcon = handRaised ? '✋' : '';
-        const micIcon = isMuted ? '🔇' : '';
+        const micIcon = isMuted ? '🔇' : '🎤';
         const selfLabel = isSelf ? ' (Tú)' : '';
         
-        itemDiv.innerHTML = `
-            <div class="participant-info">
-                <div class="participant-avatar">${initial}</div>
-                <div>
-                    <div>${userName}${selfLabel}</div>
-                    ${roleIcon ? `<span class="participant-role">${roleIcon} Host</span>` : ''}
-                </div>
+        card.innerHTML = `
+            <div class="participant-avatar-circle" style="background: ${avatarColor}">
+                ${avatar}
             </div>
-            <div class="participant-status">
-                ${handIcon ? `<span class="status-icon">${handIcon}</span>` : ''}
-                ${micIcon ? `<span class="status-icon">${micIcon}</span>` : ''}
+            <div class="participant-details">
+                <div class="participant-name">${userName}${selfLabel}</div>
+                <div class="participant-status-icons">
+                    ${roleIcon ? `<span class="status-icon">${roleIcon}</span>` : ''}
+                    ${handIcon ? `<span class="status-icon">${handIcon}</span>` : ''}
+                    <span class="status-icon">${micIcon}</span>
+                </div>
             </div>
         `;
         
-        listDiv.appendChild(itemDiv);
+        listDiv.appendChild(card);
     }
     
     function updateConnectionStatus(status) {
@@ -1100,36 +1181,32 @@ function initializeApp() {
         switch(status) {
             case 'connected':
                 statusIndicator.classList.add('connected');
-                statusIndicator.textContent = '🟢 Conectado';
+                statusIndicator.textContent = '🟢 Live';
                 break;
             case 'disconnected':
                 statusIndicator.classList.add('disconnected');
-                statusIndicator.textContent = '🔴 Desconectado';
+                statusIndicator.textContent = '🔴 Offline';
                 break;
             case 'reconnecting':
                 statusIndicator.classList.add('reconnecting');
-                statusIndicator.textContent = '🟡 Reconectando...';
+                statusIndicator.textContent = '🟡 Reconnecting...';
                 break;
             case 'failed':
                 statusIndicator.classList.add('failed');
-                statusIndicator.textContent = '❌ Error de conexión';
+                statusIndicator.textContent = '❌ Failed';
                 break;
         }
     }
     
     function showSystemNotification(message, type = 'info') {
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `system-notification ${type}`;
         notification.textContent = message;
         
-        // Add to document
         document.body.appendChild(notification);
         
-        // Trigger animation
         setTimeout(() => notification.classList.add('show'), 10);
         
-        // Remove after 3 seconds
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
@@ -1159,7 +1236,7 @@ function initializeApp() {
     }
     
     // ═══════════════════════════════════════════════════════
-    // CANVAS DRAWING
+    // COLLABORATIVE DRAWING (All users can draw)
     // ═══════════════════════════════════════════════════════
     
     if (canvas) {
@@ -1220,8 +1297,8 @@ function initializeApp() {
     
     setTimeout(() => {
         resizeCanvas();
-        updateParticipantsList();
+        updateParticipantsUI();
     }, 100);
     
-    Logger.success('OZYMEET Client initialized successfully');
+    Logger.success('🚀 OZYMEET ULTIMATE PRO initialized successfully');
 }
