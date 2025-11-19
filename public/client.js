@@ -722,6 +722,21 @@ socket.on('user-updated', ({ userId, userName, role }) => {
 });
 
 // ===== INICIALIZACIÓN =====
-setTimeout(() => {
-    updateParticipantsList();
-}, 500);
+document.addEventListener('DOMContentLoaded', () => {
+    // Esperar a que todo el DOM esté cargado
+    setTimeout(() => {
+        if (document.getElementById('participantsList')) {
+            updateParticipantsList();
+        }
+    }, 1000);
+});
+
+// Backup: también ejecutar después de que la ventana cargue
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        if (document.getElementById('participantsList')) {
+            updateParticipantsList();
+        }
+    }, 500);
+});
+
