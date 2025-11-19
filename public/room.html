@@ -3,171 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET - Sala de Reunión</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>OZYMEET - Trading Room</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/trading-styles.css">
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
 </head>
-<body>
-    <!-- MODAL DE BIENVENIDA (DEBE APARECER PRIMERO) -->
-    <div class="modal active" id="welcomeModal">
-        <div class="modal-content">
-            <h2>👋 ¡Bienvenido a OZYMEET!</h2>
-            <p style="margin-bottom: 20px; opacity: 0.9;">Ingresa tu nombre para unirte a la sala</p>
-            
-            <input type="text" id="welcomeNameInput" placeholder="Tu nombre" autofocus>
-            
-            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Contraseña de sala (si tiene):</label>
-            <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay contraseña">
-            
-            <div class="modal-buttons" style="margin-top: 20px;">
-                <button class="control-btn active" onclick="joinRoom()" style="width: 100%;">
-                    🚀 Unirse a la Sala
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- HEADER CON CONTROLES PRINCIPALES -->
-    <div class="room-header">
-        <div class="room-info">
-            <h2>🎯 OZYMEET</h2>
-            <div class="room-code">Código de sala: <span id="roomCodeDisplay"></span></div>
-        </div>
-        
-        <div class="controls">
-            <button class="control-btn" id="micBtn" onclick="toggleMic()" title="Activar/Desactivar Micrófono">
-                <span id="micIcon">🎤</span> Micrófono
-            </button>
-            
-            <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" title="Compartir Pantalla">
-                <span>🖥️</span> Pantalla
-            </button>
-            
-            <button class="control-btn" id="drawBtn" onclick="toggleDrawMode()" title="Activar Lápiz">
-                <span>✏️</span> Dibujar
-            </button>
-            
-            <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" title="Pizarra Compartida">
-                <span>📝</span> Pizarra
-            </button>
-            
-            <button class="control-btn" id="recordBtn" onclick="toggleRecording()" title="Grabar Reunión">
-                <span>🔴</span> Grabar
-            </button>
-            
-            <button class="control-btn" id="handBtn" onclick="raiseHand()" title="Levantar Mano">
-                <span>✋</span> Mano
-            </button>
-            
-            <button class="control-btn" id="settingsBtn" onclick="openSettings()" title="Configuración">
-                <span>⚙️</span> Config
-            </button>
-            
-            <div class="recording-indicator" id="recordingIndicator">
-                <div class="recording-dot"></div>
-                <span>GRABANDO</span>
-            </div>
-        </div>
-        
-        <div class="reactions-bar">
-            <button class="reaction-btn" onclick="sendReaction('👍')" title="Me gusta">👍</button>
-            <button class="reaction-btn" onclick="sendReaction('❤️')" title="Me encanta">❤️</button>
-            <button class="reaction-btn" onclick="sendReaction('😂')" title="Risa">😂</button>
-            <button class="reaction-btn" onclick="sendReaction('👏')" title="Aplauso">👏</button>
-            <button class="reaction-btn" onclick="sendReaction('🎉')" title="Celebración">🎉</button>
-        </div>
-    </div>
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="main-content">
-        <div class="screen-area">
-            <div class="screen-grid" id="screenContainer"></div>
-            <canvas id="drawCanvas"></canvas>
-            
-            <div class="draw-tools" id="drawTools">
-                <div class="color-picker">
-                    <div class="color-btn" style="background: #FF0000;" onclick="setDrawColor('#FF0000')"></div>
-                    <div class="color-btn" style="background: #00FF00;" onclick="setDrawColor('#00FF00')"></div>
-                    <div class="color-btn" style="background: #0000FF;" onclick="setDrawColor('#0000FF')"></div>
-                    <div class="color-btn" style="background: #FFFF00;" onclick="setDrawColor('#FFFF00')"></div>
-                    <div class="color-btn" style="background: #000000;" onclick="setDrawColor('#000000')"></div>
-                </div>
-                <button class="control-btn" onclick="clearDrawing()" style="padding: 8px 15px;">
-                    <span>🗑️</span> Limpiar
-                </button>
-            </div>
-            
-            <div class="whiteboard-container" id="whiteboardContainer">
-                <canvas id="whiteboardCanvas"></canvas>
-            </div>
-        </div>
-
-        <div class="sidebar">
-            <div class="chat-container">
-                <h3>💬 Chat</h3>
-                <div class="chat-messages" id="chatMessages"></div>
-                <div class="chat-input-area">
-                    <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKey(event)">
-                    <button onclick="sendChatMessage()">Enviar</button>
-                </div>
-            </div>
-
-            <div class="participants-container">
-                <h3>👥 Participantes (<span id="participantCount">0</span>)</h3>
-                <div id="participantsList"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE CONFIGURACIÓN -->
-    <div class="modal" id="settingsModal">
-        <div class="modal-content">
-            <h2>⚙️ Configuración</h2>
-            
-            <label>Tu Nombre:</label>
-            <input type="text" id="userNameInput" placeholder="Ingresa tu nombre" value="">
-            
-            <label>Contraseña de Sala (Host):</label>
-            <input type="password" id="roomPasswordInput" placeholder="Opcional - solo para host">
-            
-            <label>Rol:</label>
-            <select id="roleSelect" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 2px solid rgba(255,255,255,0.3);">
-                <option value="participant">👤 Participante</option>
-                <option value="host">👑 Host</option>
-            </select>
-            
-            <div class="modal-buttons">
-                <button class="control-btn" onclick="closeSettings()">Cancelar</button>
-                <button class="control-btn active" onclick="saveSettings()">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="client.js"></script>
+<body class="trading-theme">
     
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room');
-        const roomCodeDisplay = document.getElementById('roomCodeDisplay');
-        if (roomCodeDisplay) {
-            roomCodeDisplay.textContent = roomCode || 'N/A';
-            roomCodeDisplay.addEventListener('click', () => {
-                navigator.clipboard.writeText(roomCode);
-                alert('✅ Código copiado al portapapeles');
-            });
-        }
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MAIN LAYOUT: Pantalla arriba, Controles abajo -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    
+    <div class="main-layout">
         
-        const welcomeNameInput = document.getElementById('welcomeNameInput');
-        if (welcomeNameInput) {
-            welcomeNameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') joinRoom();
-            });
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="room-info">
+                <h2>📊 OZYMEET Trading Room</h2>
+                <span class="room-code">Sala: <span id="roomCode"></span></span>
+            </div>
+            <div class="top-bar-controls">
+                <div id="connectionStatus" class="connection-status">🔴 Conectando...</div>
+                <div id="recordingIndicator" class="recording-indicator">🔴 REC</div>
+                <button class="icon-btn" onclick="openSettings()" title="Configuración">⚙️</button>
+            </div>
+        </div>
+        
+        <!-- MAIN SCREEN AREA -->
+        <div class="screen-area">
+            <div id="screenContainer" class="screen-container">
+                <!-- Shared screens appear here -->
+                <canvas id="drawCanvas" class="draw-overlay"></canvas>
+            </div>
+            
+            <!-- Draw Tools (floating) -->
+            <div id="drawTools" class="draw-tools">
+                <button class="color-btn selected" style="background: #FF0000" onclick="setDrawColor('#FF0000')"></button>
+                <button class="color-btn" style="background: #00FF00" onclick="setDrawColor('#00FF00')"></button>
+                <button class="color-btn" style="background: #0000FF" onclick="setDrawColor('#0000FF')"></button>
+                <button class="color-btn" style="background: #FFFF00" onclick="setDrawColor('#FFFF00')"></button>
+                <button class="color-btn" style="background: #FF00FF" onclick="setDrawColor('#FF00FF')"></button>
+                <button class="color-btn" style="background: #FFFFFF" onclick="setDrawColor('#FFFFFF')"></button>
+                <button class="tool-btn" onclick="clearDrawing()">🗑️ Limpiar</button>
+            </div>
+        </div>
+        
+        <!-- BOTTOM CONTROLS BAR -->
+        <div class="bottom-controls-bar">
+            
+            <!-- Participants Panel (left side) -->
+            <div class="bottom-participants">
+                <div class="participants-header">
+                    <span>👥 Traders (<span id="participantCount">0</span>)</span>
+                </div>
+                <div id="participantsList" class="participants-list-horizontal">
+                    <!-- Participants appear here as avatar cards -->
+                </div>
+            </div>
+            
+            <!-- Main Control Buttons (center) -->
+            <div class="main-controls-center">
+                <button id="micBtn" class="control-btn" onclick="toggleMic()" title="Micrófono">
+                    <span id="micIcon" class="btn-icon">🔇</span>
+                    <span class="btn-label">Mic</span>
+                </button>
+                
+                <button id="screenBtn" class="control-btn" onclick="toggleScreenShare()" title="Compartir Pantalla">
+                    <span class="btn-icon">🖥️</span>
+                    <span class="btn-label">Compartir</span>
+                </button>
+                
+                <button id="drawBtn" class="control-btn" onclick="toggleDrawMode()" title="Dibujar (Todos pueden)">
+                    <span class="btn-icon">✏️</span>
+                    <span class="btn-label">Dibujar</span>
+                </button>
+                
+                <button id="whiteboardBtn" class="control-btn" onclick="toggleWhiteboard()" title="Pizarra">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-label">Pizarra</span>
+                </button>
+                
+                <button id="recordBtn" class="control-btn" onclick="toggleRecording()" title="Grabar">
+                    <span class="btn-icon">🔴</span>
+                    <span class="btn-label">Grabar</span>
+                </button>
+                
+                <button id="handBtn" class="control-btn" onclick="raiseHand()" title="Levantar Mano">
+                    <span class="btn-icon">✋</span>
+                    <span class="btn-label">Mano</span>
+                </button>
+                
+                <button class="control-btn" onclick="document.getElementById('chatPanel').classList.toggle('active')" title="Chat">
+                    <span class="btn-icon">💬</span>
+                    <span class="btn-label">Chat</span>
+                </button>
+                
+                <button class="control-btn" onclick="document.getElementById('reactionsPanel').classList.toggle('active')" title="Reacciones">
+                    <span class="btn-icon">😀</span>
+                    <span class="btn-label">Reacciones</span>
+                </button>
+            </div>
+            
+            <!-- Quick Reactions (right side) -->
+            <div class="bottom-reactions">
+                <button class="reaction-quick-btn" onclick="sendReaction('🐂')" title="Bullish">🐂</button>
+                <button class="reaction-quick-btn" onclick="sendReaction('🐻')" title="Bearish">🐻</button>
+                <button class="reaction-quick-btn" onclick="sendReaction('🚀')" title="To the Moon">🚀</button>
+                <button class="reaction-quick-btn" onclick="sendReaction('📈')" title="Chart Up">📈</button>
+                <button class="reaction-quick-btn" onclick="sendReaction('📉')" title="Chart Down">📉</button>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SIDE PANELS -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    
+    <!-- Chat Panel (slides from right) -->
+    <div id="chatPanel" class="side-panel chat-panel">
+        <div class="panel-header">
+            <h3>💬 Chat</h3>
+            <button class="close-panel-btn" onclick="document.getElementById('chatPanel').classList.remove('active')">✕</button>
+        </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-container">
+            <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKey(event)">
+            <button onclick="sendChatMessage()">Enviar</button>
+        </div>
+    </div>
+    
+    <!-- Reactions Panel (slides from right) -->
+    <div id="reactionsPanel" class="side-panel reactions-panel">
+        <div class="panel-header">
+            <h3>😀 Reacciones Trading</h3>
+            <button class="close-panel-btn" onclick="document.getElementById('reactionsPanel').classList.remove('active')">✕</button>
+        </div>
+        <div class="reactions-grid">
+            <button class="reaction-btn" onclick="sendReaction('🐂')">🐂<span>Bullish</span></button>
+            <button class="reaction-btn" onclick="sendReaction('🐻')">🐻<span>Bearish</span></button>
+            <button class="reaction-btn" onclick="sendReaction('🚀')">🚀<span>Moon</span></button>
+            <button class="reaction-btn" onclick="sendReaction('📈')">📈<span>Up</span></button>
+            <button class="reaction-btn" onclick="sendReaction('📉')">📉<span>Down</span></button>
+            <button class="reaction-btn" onclick="sendReaction('💎')">💎<span>Diamond Hands</span></button>
+            <button class="reaction-btn" onclick="sendReaction('😠')">😠<span>Enojado</span></button>
+            <button class="reaction-btn" onclick="sendReaction('😲')">😲<span>Sorpresa</span></button>
+            <button class="reaction-btn" onclick="sendReaction('🔥')">🔥<span>Fire</span></button>
+            <button class="reaction-btn" onclick="sendReaction('💯')">💯<span>Perfect</span></button>
+            <button class="reaction-btn" onclick="sendReaction('👍')">👍<span>Like</span></button>
+            <button class="reaction-btn" onclick="sendReaction('❤️')">❤️<span>Love</span></button>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MODALS -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="modal active">
+        <div class="modal-content welcome-modal">
+            <h2>🎯 Bienvenido a OZYMEET Trading Room</h2>
+            <p>Ingresa tu nombre para unirte</p>
+            
+            <div class="form-group">
+                <label>Nombre de Trader</label>
+                <input type="text" id="welcomeNameInput" placeholder="Tu nombre..." maxlength="50">
+            </div>
+            
+            <div class="form-group">
+                <label>Contraseña de Sala (opcional)</label>
+                <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay">
+            </div>
+            
+            <button class="primary-btn" onclick="joinRoom()">🚀 Entrar a la Sala</button>
+        </div>
+    </div>
+    
+    <!-- Settings Modal (Enhanced) -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h2>⚙️ Configuración Avanzada</h2>
+                <button class="close-btn" onclick="closeSettings()">✕</button>
+            </div>
+            
+            <div class="settings-sections">
+                
+                <!-- Profile Settings -->
+                <div class="settings-section">
+                    <h3>👤 Perfil</h3>
+                    
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="userNameInput" placeholder="Tu nombre">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Avatar (emoji)</label>
+                        <input type="text" id="avatarInput" placeholder="Ej: 👨‍💼 📊 🎯" maxlength="2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Color de Avatar</label>
+                        <input type="color" id="avatarColorPicker" value="#4CAF50">
+                    </div>
+                </div>
+                
+                <!-- Audio Settings -->
+                <div class="settings-section">
+                    <h3>🔊 Audio</h3>
+                    
+                    <div class="form-group">
+                        <label>Volumen General: <span id="masterVolumeValue">100%</span></label>
+                        <input type="range" id="masterVolumeSlider" min="0" max="100" value="100" 
+                               oninput="updateMasterVolume(this.value)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Volumen de Micrófono: <span id="micVolumeValue">100%</span></label>
+                        <input type="range" id="micVolumeSlider" min="0" max="100" value="100" 
+                               oninput="updateMicVolume(this.value)">
+                    </div>
+                </div>
+                
+                <!-- View Settings -->
+                <div class="settings-section">
+                    <h3>👁️ Vista</h3>
+                    
+                    <div class="form-group">
+                        <label>Modo de Vista</label>
+                        <select id="viewModeSelect" onchange="changeViewMode(this.value)">
+                            <option value="grid">Grid (Cuadrícula)</option>
+                            <option value="speaker">Speaker (Principal)</option>
+                            <option value="compact">Compact (Compacto)</option>
+                        </select>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="modal-footer">
+                <button class="secondary-btn" onclick="closeSettings()">Cancelar</button>
+                <button class="primary-btn" onclick="saveSettings()">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Whiteboard Modal -->
+    <div id="whiteboardContainer" class="whiteboard-container">
+        <div class="whiteboard-header">
+            <h3>📊 Pizarra Colaborativa</h3>
+            <button class="close-btn" onclick="toggleWhiteboard()">✕</button>
+        </div>
+        <canvas id="whiteboardCanvas" class="whiteboard-canvas"></canvas>
+    </div>
+    
+    <!-- Participants Container (for view modes) -->
+    <div id="participantsContainer" class="view-mode-grid">
+        <!-- Used for different view layouts -->
+    </div>
+    
+    <script src="/client.js"></script>
+    <script>
+        // Set room code in UI
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCodeSpan = document.getElementById('roomCode');
+        if (roomCodeSpan) {
+            roomCodeSpan.textContent = urlParams.get('room') || 'Unknown';
         }
     </script>
 </body>
 </html>
-
-
 
 
