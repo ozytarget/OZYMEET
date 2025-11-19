@@ -1,50 +1,227 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>OZYMEET - Sala</title>
-<style>
-body{margin:0;font-family:Arial;background:#0f0f0f;color:#fff}
-.header{background:#1e3c72;padding:15px 30px;display:flex;justify-content:space-between}
-.main{display:flex;height:calc(100vh - 140px)}
-.screen{flex:1;background:#1a1a1a;display:flex;align-items:center;justify-content:center;padding:20px}
-#shared-screen{max-width:100%;max-height:100%;border-radius:10px}
-.no-screen{text-align:center;color:#666}
-.sidebar{width:300px;background:#1e1e1e;border-left:1px solid #333;padding:20px;overflow-y:auto}
-.participant{background:#2a2a2a;padding:10px;border-radius:8px;margin:10px 0}
-.controls{background:#1e1e1e;padding:20px;display:flex;gap:10px;justify-content:center}
-button{padding:15px 25px;border:none;border-radius:10px;font-size:16px;cursor:pointer;color:#fff}
-.btn-mute{background:#10b981}
-.btn-mute.muted{background:#ef4444}
-.btn-screen{background:#3b82f6}
-.btn-screen.active{background:#ef4444}
-.btn-leave{background:#ef4444}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OZYMEET - Videoconferencia Profesional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-create {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-create:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-join {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-join:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .input-group {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .input-group.active {
+            display: block;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .features {
+            margin-top: 40px;
+            text-align: left;
+            opacity: 0.9;
+        }
+        
+        .features h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features li {
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        
+        .features li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
 </head>
 <body>
-<div class="header">
-<h1>OZYMEET</h1>
-<div id="room-name">Sala: ...</div>
-</div>
-<div class="main">
-<div class="screen">
-<video id="shared-screen" autoplay playsinline style="display:none"></video>
-<div class="no-screen" id="no-screen-msg">
-<h2>No hay pantalla compartida</h2>
-<p>Esperando...</p>
-</div>
-</div>
-<div class="sidebar">
-<h3>Participantes (<span id="participant-count">0</span>)</h3>
-<div id="participants-list"></div>
-</div>
-</div>
-<div class="controls">
-<button class="btn-mute" id="btn-mute"><span id="mute-icon">🎤</span> <span id="mute-text">Mutear</span></button>
-<button class="btn-screen" id="btn-screen"><span id="screen-icon">🖥️</span> <span id="screen-text">Compartir</span></button>
-<button class="btn-leave" id="btn-leave">Salir</button>
-</div>
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+    <div class="container">
+        <h1>🎯 OZYMEET</h1>
+        <p>Plataforma de videoconferencia profesional con TOP 10 funcionalidades</p>
+        
+        <div class="buttons">
+            <button class="btn-create" onclick="createRoom()">
+                🚀 Crear Nueva Sala
+            </button>
+            <button class="btn-join" onclick="toggleJoinInput()">
+                🔗 Unirse a Sala Existente
+            </button>
+        </div>
+        
+        <div class="input-group" id="joinGroup">
+            <input type="text" id="roomCodeInput" placeholder="Ingresa el código de 6 caracteres" maxlength="6">
+            <button class="btn-join" onclick="joinRoom()">
+                ✅ Unirse
+            </button>
+        </div>
+        
+        <div class="features">
+            <h3>✨ Funcionalidades:</h3>
+            <ul>
+                <li>Audio en tiempo real (hasta 30 usuarios)</li>
+                <li>2 pantallas compartidas simultáneas</li>
+                <li>Lápiz punteador sobre pantallas</li>
+                <li>Chat en tiempo real</li>
+                <li>Nombres personalizados</li>
+                <li>Levantar mano</li>
+                <li>Reacciones con emojis</li>
+                <li>Grabar reunión</li>
+                <li>Contraseña de sala</li>
+                <li>Roles (Host/Participante)</li>
+                <li>Pizarra compartida</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        function toggleJoinInput() {
+            const joinGroup = document.getElementById('joinGroup');
+            joinGroup.classList.toggle('active');
+            if (joinGroup.classList.contains('active')) {
+                document.getElementById('roomCodeInput').focus();
+            }
+        }
+        
+        async function createRoom() {
+            try {
+                const response = await fetch('/create-room', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = `/room?room=${data.roomId}`;
+                } else {
+                    alert('Error al crear sala');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al crear sala');
+            }
+        }
+        
+        function joinRoom() {
+            const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            
+            if (roomCode.length !== 6) {
+                alert('⚠️ El código debe tener 6 caracteres');
+                return;
+            }
+            
+            window.location.href = `/room?room=${roomCode}`;
+        }
+        
+        // Enter para unirse
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('roomCodeInput');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') joinRoom();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
