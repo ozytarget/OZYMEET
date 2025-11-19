@@ -417,10 +417,37 @@ function initializeApp() {
         });
         
         peer.on('stream', (stream) => {
-            console.log('Recibiendo audio de:', userId);
+            console.log('✅ Recibiendo audio de:', userId);
+            playAudioStream(userId, stream);
+        });
+        
+        peer.on('error', (err) => {
+            console.error('Error peer connection:', err);
         });
         
         peers[userId] = peer;
+    }
+    
+    function playAudioStream(userId, stream) {
+        const existingAudio = document.getElementById(`audio-${userId}`);
+        if (existingAudio) existingAudio.remove();
+        
+        const audio = document.createElement('audio');
+        audio.id = `audio-${userId}`;
+        audio.srcObject = stream;
+        audio.autoplay = true;
+        audio.volume = 1.0;
+        audio.style.display = 'none';
+        
+        audio.addEventListener('loadedmetadata', () => {
+            audio.play().then(() => {
+                console.log('🔊 Audio reproduciendo para:', userId);
+            }).catch(err => {
+                console.error('Error reproduciendo audio:', err);
+            });
+        });
+        
+        document.body.appendChild(audio);
     }
     
     function addScreenVideo(userId, stream, userName) {
@@ -453,6 +480,10 @@ function initializeApp() {
     function removeScreenVideo(userId) {
         const element = document.getElementById(`screen-${userId}`);
         if (element) element.remove();
+        
+        const audio = document.getElementById(`audio-${userId}`);
+        if (audio) audio.remove();
+        
         resizeCanvas();
     }
     
@@ -562,7 +593,7 @@ function initializeApp() {
     }
     
     socket.on('user-connected', (userData) => {
-        console.log('Usuario conectó:', userData);
+        console.log('👤 Usuario conectó:', userData);
         participants.set(userData.userId, userData);
         updateParticipantsList();
         connectToNewUser(userData.userId);
@@ -601,7 +632,12 @@ function initializeApp() {
             });
             
             peer.on('stream', (stream) => {
-                console.log('Recibiendo audio de:', from);
+                console.log('✅ Recibiendo audio de:', from);
+                playAudioStream(from, stream);
+            });
+            
+            peer.on('error', (err) => {
+                console.error('Error peer connection:', err);
             });
             
             peers[from] = peer;
@@ -731,7 +767,4 @@ function initializeApp() {
     setTimeout(resizeCanvas, 100);
     setTimeout(updateParticipantsList, 1000);
 }
-
-
-
 
