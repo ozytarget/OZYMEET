@@ -405,7 +405,7 @@ body {
 }
 
 .modal.active {
-    display: flex;
+    display: flex !important;
 }
 
 .modal-content {
@@ -447,6 +447,15 @@ body {
 
 .modal-content input::placeholder {
     color: rgba(255,255,255,0.6);
+}
+
+.modal-content select {
+    cursor: pointer;
+}
+
+.modal-content select option {
+    background: #764ba2;
+    color: white;
 }
 
 .modal-buttons {
@@ -567,3 +576,4 @@ body {
         justify-content: center;
     }
 }
+
