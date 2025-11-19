@@ -633,13 +633,18 @@ function showFloatingReaction(emoji) {
     setTimeout(() => reaction.remove(), 3000);
 }
 
-// ===== LISTA DE PARTICIPANTES =====
 function updateParticipantsList() {
     const listDiv = document.getElementById('participantsList');
     const countSpan = document.getElementById('participantCount');
     
+    // Verificar que los elementos existen
+    if (!listDiv || !countSpan) {
+        console.warn('Elementos de participantes no encontrados aún');
+        return;
+    }
+    
     listDiv.innerHTML = '';
-    countSpan.textContent = participants.size + 1; // +1 por el usuario actual
+    countSpan.textContent = participants.size + 1;
     
     // Agregar usuario actual
     addParticipantToList(currentUser.id, currentUser.name, currentUser.role, currentUser.handRaised, true);
@@ -739,4 +744,5 @@ window.addEventListener('load', () => {
         }
     }, 500);
 });
+
 
