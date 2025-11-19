@@ -32,6 +32,242 @@ body {
     opacity: 0.8;
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════
+   OZYMEET PRO - Additional Styles
+   Connection Status & System Notifications
+   ═══════════════════════════════════════════════════════════ */
+
+/* Connection Status Indicator */
+.connection-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.3s ease;
+    transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: #4CAF50;
+}
+
+.connection-status.disconnected {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #F44336;
+}
+
+.connection-status.reconnecting {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #FFC107;
+    animation: pulse 1.5s infinite;
+}
+
+.connection-status.failed {
+    background: rgba(156, 39, 176, 0.2);
+    border: 1px solid rgba(156, 39, 176, 0.5);
+    color: #9C27B0;
+}
+
+/* System Notifications */
+.system-notification {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10001;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: bottom 0.3s ease;
+    max-width: 80%;
+    text-align: center;
+}
+
+.system-notification.show {
+    bottom: 30px;
+}
+
+.system-notification.info {
+    background: rgba(33, 150, 243, 0.9);
+    border: 1px solid rgba(33, 150, 243, 1);
+    color: white;
+}
+
+.system-notification.success {
+    background: rgba(76, 175, 80, 0.9);
+    border: 1px solid rgba(76, 175, 80, 1);
+    color: white;
+}
+
+.system-notification.warning {
+    background: rgba(255, 152, 0, 0.9);
+    border: 1px solid rgba(255, 152, 0, 1);
+    color: white;
+}
+
+.system-notification.error {
+    background: rgba(244, 67, 54, 0.9);
+    border: 1px solid rgba(244, 67, 54, 1);
+    color: white;
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Enhanced Floating Reactions */
+.floating-reaction {
+    position: fixed;
+    font-size: 48px;
+    animation: floatUp 3s ease-out forwards;
+    z-index: 9999;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-300px) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Participant Status Icons */
+.participant-status {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.status-icon {
+    font-size: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Chat Message Timestamps */
+.chat-message .sender span {
+    opacity: 0.5;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .connection-status {
+        top: 10px;
+        right: 10px;
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    .system-notification {
+        font-size: 13px;
+        padding: 10px 20px;
+        max-width: 90%;
+    }
+    
+    .floating-reaction {
+        font-size: 36px;
+    }
+}
+
+/* Enhanced Button States */
+.control-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scale(1.05);
+}
+
+.control-btn.danger {
+    background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+    animation: pulse 1.5s infinite;
+}
+
+/* Improved Screen Video Labels */
+.screen-label {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Participant Role Badge */
+.participant-role {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 2px;
+}
 /* ===== CONTROLES PRINCIPALES ===== */
 .controls {
     display: flex;
