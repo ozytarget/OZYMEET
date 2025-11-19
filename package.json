@@ -1,0 +1,20 @@
+{
+  "name": "ozymeet",
+  "version": "1.0.0",
+  "description": "Plataforma de streaming con audio y compartir pantalla",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["webrtc", "streaming", "video conference"],
+  "author": "OzyTarget",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  }
+}
