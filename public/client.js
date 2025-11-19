@@ -1,4 +1,23 @@
-const socket = io();
+/**
+ * ╔═══════════════════════════════════════════════════════════╗
+ * ║                  🎯 OZYMEET CLIENT PRO 🎯                 ║
+ * ║           Professional WebRTC Client Implementation       ║
+ * ║                      Version 2.0                          ║
+ * ╚═══════════════════════════════════════════════════════════╝
+ */
+
+// ═══════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════
+
+const socket = io({
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 5,
+    transports: ['websocket', 'polling']
+});
+
 const roomId = new URLSearchParams(window.location.search).get('room');
 const peers = {};
 const screenPeers = {};
@@ -12,20 +31,41 @@ let isDrawingMode = false;
 let isRecording = false;
 let mediaRecorder = null;
 let recordedChunks = [];
+let reconnectAttempts = 0;
+let isReconnecting = false;
 
 let currentUser = {
     id: null,
     name: localStorage.getItem('userName') || 'Usuario',
     role: 'participant',
-    handRaised: false
+    handRaised: false,
+    isConnected: false
 };
 
+// ═══════════════════════════════════════════════════════════
+// PROFESSIONAL LOGGER
+// ═══════════════════════════════════════════════════════════
+
+const Logger = {
+    info: (msg, data = '') => console.log(`[${new Date().toISOString()}] ℹ️  ${msg}`, data),
+    success: (msg, data = '') => console.log(`[${new Date().toISOString()}] ✅ ${msg}`, data),
+    error: (msg, data = '') => console.error(`[${new Date().toISOString()}] ❌ ${msg}`, data),
+    warn: (msg, data = '') => console.warn(`[${new Date().toISOString()}] ⚠️  ${msg}`, data),
+    peer: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🔗 ${msg}`, data),
+    audio: (msg, data = '') => console.log(`[${new Date().toISOString()}] 🔊 ${msg}`, data)
+};
+
+// ═══════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════
+
 window.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM cargado');
+    Logger.success('DOM fully loaded - Initializing OZYMEET');
     initializeApp();
 });
 
 function initializeApp() {
+    // Canvas setup
     const canvas = document.getElementById('drawCanvas');
     const ctx = canvas ? canvas.getContext('2d') : null;
     
@@ -37,22 +77,77 @@ function initializeApp() {
     let lastX = 0;
     let lastY = 0;
     
+    // ═══════════════════════════════════════════════════════
+    // SOCKET CONNECTION HANDLERS
+    // ═══════════════════════════════════════════════════════
+    
     socket.on('connect', () => {
         currentUser.id = socket.id;
-        console.log('🔌 Conectado:', socket.id);
+        currentUser.isConnected = true;
+        reconnectAttempts = 0;
+        isReconnecting = false;
+        
+        Logger.success(`Connected to server: ${socket.id}`);
+        updateConnectionStatus('connected');
+        
+        // If we had joined a room before, try to rejoin
+        if (roomId && currentUser.name) {
+            Logger.info('Attempting to rejoin room after reconnection');
+            // The welcome modal will handle rejoin
+        }
     });
+    
+    socket.on('disconnect', (reason) => {
+        currentUser.isConnected = false;
+        Logger.warn(`Disconnected from server: ${reason}`);
+        updateConnectionStatus('disconnected');
+        
+        if (reason === 'io server disconnect') {
+            // Server initiated disconnect, try to reconnect
+            socket.connect();
+        }
+    });
+    
+    socket.on('reconnect_attempt', (attempt) => {
+        reconnectAttempts = attempt;
+        Logger.info(`Reconnection attempt ${attempt}`);
+        updateConnectionStatus('reconnecting');
+    });
+    
+    socket.on('reconnect_failed', () => {
+        Logger.error('Failed to reconnect after multiple attempts');
+        updateConnectionStatus('failed');
+        showSystemNotification('⚠️ Connection lost. Please refresh the page.', 'error');
+    });
+    
+    socket.on('error', ({ message }) => {
+        Logger.error('Server error:', message);
+        alert(`❌ ${message}`);
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // ROOM JOIN - Enhanced with existing users sync
+    // ═══════════════════════════════════════════════════════
     
     window.joinRoom = function() {
         const nameInput = document.getElementById('welcomeNameInput');
         const passwordInput = document.getElementById('welcomePasswordInput');
         
-        if (!nameInput) return;
+        if (!nameInput) {
+            Logger.error('Name input element not found');
+            return;
+        }
         
         const name = nameInput.value.trim();
         const password = passwordInput ? passwordInput.value : '';
         
         if (!name) {
             alert('⚠️ Por favor ingresa tu nombre');
+            return;
+        }
+        
+        if (name.length > 50) {
+            alert('⚠️ El nombre es demasiado largo (máximo 50 caracteres)');
             return;
         }
         
@@ -63,14 +158,314 @@ function initializeApp() {
         const welcomeModal = document.getElementById('welcomeModal');
         if (welcomeModal) welcomeModal.classList.remove('active');
         
+        Logger.info(`Joining room ${roomId} as ${name}`);
+        
         socket.emit('join-room', {
             roomId: roomId,
             userName: name,
             password: password
         });
         
-        startAudio();
+        // Start audio after a short delay to ensure room join completes
+        setTimeout(() => {
+            startAudio();
+        }, 500);
     };
+    
+    // ✅ CRITICAL: Handle joined-room with existing users
+    socket.on('joined-room', ({ success, userData, roomData, existingUsers }) => {
+        if (!success) {
+            Logger.error('Failed to join room');
+            return;
+        }
+        
+        Logger.success(`Successfully joined room: ${roomData.id}`);
+        Logger.info(`Room stats: ${roomData.userCount}/${roomData.maxUsers} users`);
+        
+        // Update current user data
+        currentUser.id = userData.userId;
+        currentUser.role = userData.role;
+        
+        // ✅ CRITICAL FIX: Process existing users FIRST
+        if (existingUsers && existingUsers.length > 0) {
+            Logger.info(`📥 Found ${existingUsers.length} existing users in room`);
+            
+            existingUsers.forEach((user, index) => {
+                Logger.peer(`Adding existing user [${index + 1}/${existingUsers.length}]: ${user.userName} (${user.userId.slice(0, 8)}...)`);
+                
+                // Add to participants map
+                participants.set(user.userId, {
+                    userId: user.userId,
+                    userName: user.userName,
+                    role: user.role,
+                    handRaised: user.handRaised || false,
+                    isMuted: user.isMuted || false,
+                    isReady: user.isReady || false
+                });
+            });
+            
+            // Update UI immediately
+            updateParticipantsList();
+            
+            // ✅ Connect to existing users after a short delay (wait for audio stream)
+            setTimeout(() => {
+                if (localStream) {
+                    Logger.peer('Initiating WebRTC connections to existing users');
+                    existingUsers.forEach(user => {
+                        connectToNewUser(user.userId);
+                    });
+                } else {
+                    Logger.warn('Local stream not ready yet, will connect when audio starts');
+                }
+            }, 1000);
+            
+            showSystemNotification(`✅ Te uniste a la sala con ${existingUsers.length} persona(s)`, 'success');
+        } else {
+            Logger.info('You are the first user in the room');
+            updateParticipantsList();
+            showSystemNotification('✅ Eres el primero en la sala', 'info');
+        }
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // USER CONNECTED - New user joins
+    // ═══════════════════════════════════════════════════════
+    
+    socket.on('user-connected', (userData) => {
+        Logger.success(`New user connected: ${userData.userName} (${userData.userId.slice(0, 8)}...)`);
+        
+        // Add to participants
+        participants.set(userData.userId, {
+            userId: userData.userId,
+            userName: userData.userName,
+            role: userData.role || 'participant',
+            handRaised: userData.handRaised || false,
+            isMuted: userData.isMuted || false,
+            isReady: userData.isReady || false
+        });
+        
+        updateParticipantsList();
+        
+        // Connect via WebRTC (as initiator since we were here first)
+        if (localStream) {
+            connectToNewUser(userData.userId);
+        }
+        
+        addSystemMessage(`${userData.userName} se unió a la sala`);
+        showSystemNotification(`👋 ${userData.userName} se unió`, 'info');
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // USER DISCONNECTED
+    // ═══════════════════════════════════════════════════════
+    
+    socket.on('user-disconnected', (userId) => {
+        const user = participants.get(userId);
+        const userName = user ? user.userName : 'Usuario';
+        
+        Logger.warn(`User disconnected: ${userName} (${userId.slice(0, 8)}...)`);
+        
+        // Clean up peer connections
+        if (peers[userId]) {
+            peers[userId].destroy();
+            delete peers[userId];
+        }
+        
+        if (screenPeers[userId]) {
+            screenPeers[userId].destroy();
+            delete screenPeers[userId];
+            removeScreenVideo(userId);
+        }
+        
+        // Remove audio element
+        const audioElement = document.getElementById(`audio-${userId}`);
+        if (audioElement) audioElement.remove();
+        
+        // Remove from participants
+        participants.delete(userId);
+        updateParticipantsList();
+        
+        addSystemMessage(`${userName} salió de la sala`);
+        showSystemNotification(`👋 ${userName} salió`, 'info');
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // WEBRTC SIGNALING
+    // ═══════════════════════════════════════════════════════
+    
+    socket.on('signal', ({ from, signal }) => {
+        Logger.peer(`Received signal from ${from.slice(0, 8)}...`);
+        
+        if (!peers[from]) {
+            // Create new peer connection (non-initiator)
+            Logger.peer(`Creating peer connection as non-initiator for ${from.slice(0, 8)}...`);
+            
+            const peer = new SimplePeer({ 
+                initiator: false, 
+                stream: localStream, 
+                trickle: false,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+            
+            peer.on('signal', (sig) => {
+                Logger.peer(`Sending signal back to ${from.slice(0, 8)}...`);
+                socket.emit('signal', { to: from, signal: sig, roomId });
+            });
+            
+            peer.on('stream', (stream) => {
+                Logger.audio(`Receiving audio stream from ${from.slice(0, 8)}...`);
+                playAudioStream(from, stream);
+            });
+            
+            peer.on('connect', () => {
+                Logger.success(`Peer connection established with ${from.slice(0, 8)}...`);
+            });
+            
+            peer.on('error', (err) => {
+                Logger.error(`Peer error with ${from.slice(0, 8)}...:`, err.message);
+            });
+            
+            peer.on('close', () => {
+                Logger.warn(`Peer connection closed with ${from.slice(0, 8)}...`);
+            });
+            
+            peers[from] = peer;
+            peer.signal(signal);
+        } else {
+            // Existing peer, just signal
+            peers[from].signal(signal);
+        }
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // SCREEN SHARING SIGNALS
+    // ═══════════════════════════════════════════════════════
+    
+    socket.on('screen-share-started', ({ userId, userName }) => {
+        Logger.info(`Screen share started by ${userName}`);
+        showSystemNotification(`🖥️ ${userName} está compartiendo pantalla`, 'info');
+    });
+    
+    socket.on('screen-signal', ({ from, signal }) => {
+        if (!screenPeers[from]) {
+            const screenPeer = new SimplePeer({ 
+                initiator: false, 
+                trickle: false,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+            
+            screenPeer.on('signal', (sig) => {
+                socket.emit('screen-signal', { to: from, signal: sig, roomId });
+            });
+            
+            screenPeer.on('stream', (stream) => {
+                const user = participants.get(from);
+                const userName = user ? user.userName : 'Usuario';
+                addScreenVideo(from, stream, userName);
+            });
+            
+            screenPeers[from] = screenPeer;
+            screenPeer.signal(signal);
+        } else {
+            screenPeers[from].signal(signal);
+        }
+    });
+    
+    socket.on('screen-share-stopped', ({ userId }) => {
+        Logger.info(`Screen share stopped by ${userId.slice(0, 8)}...`);
+        removeScreenVideo(userId);
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // OTHER SOCKET EVENTS
+    // ═══════════════════════════════════════════════════════
+    
+    socket.on('user-mic-status', ({ userId, isMuted }) => {
+        const user = participants.get(userId);
+        if (user) {
+            user.isMuted = isMuted;
+            updateParticipantsList();
+        }
+    });
+    
+    socket.on('hand-raised', ({ userId, userName, raised }) => {
+        const user = participants.get(userId);
+        if (user) {
+            user.handRaised = raised;
+            updateParticipantsList();
+            if (raised) {
+                addSystemMessage(`✋ ${userName} levantó la mano`);
+                showSystemNotification(`✋ ${userName} levantó la mano`, 'info');
+            }
+        }
+    });
+    
+    socket.on('chat-message', ({ userName, message }) => {
+        addChatMessage(userName, message, false);
+    });
+    
+    socket.on('reaction', ({ userName, emoji }) => {
+        showFloatingReaction(emoji);
+        addSystemMessage(`${userName} reaccionó con ${emoji}`);
+    });
+    
+    socket.on('draw-line', ({ fromX, fromY, toX, toY, color }) => {
+        if (ctx) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+        }
+    });
+    
+    socket.on('clear-drawing', () => {
+        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+    
+    socket.on('user-updated', ({ userId, userName, role }) => {
+        const user = participants.get(userId);
+        if (user) {
+            user.userName = userName;
+            user.role = role;
+            updateParticipantsList();
+        }
+    });
+    
+    socket.on('new-host', ({ userId, userName }) => {
+        Logger.info(`New host assigned: ${userName}`);
+        const user = participants.get(userId);
+        if (user) {
+            user.role = 'host';
+            updateParticipantsList();
+        }
+        if (userId === currentUser.id) {
+            currentUser.role = 'host';
+            showSystemNotification('👑 Ahora eres el host', 'success');
+        }
+        addSystemMessage(`👑 ${userName} es ahora el host`);
+    });
+    
+    socket.on('server-shutdown', ({ message }) => {
+        Logger.warn('Server shutdown notification:', message);
+        showSystemNotification(message, 'warning');
+    });
+    
+    // ═══════════════════════════════════════════════════════
+    // UI CONTROLS
+    // ═══════════════════════════════════════════════════════
     
     window.toggleMic = function() {
         if (!localStream) {
@@ -101,6 +496,8 @@ function initializeApp() {
                 userId: currentUser.id,
                 isMuted: !isMicActive
             });
+            
+            Logger.info(`Microphone ${isMicActive ? 'enabled' : 'muted'}`);
         }
     };
     
@@ -108,7 +505,8 @@ function initializeApp() {
         if (!isScreenSharing) {
             try {
                 screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { cursor: 'always' }
+                    video: { cursor: 'always' },
+                    audio: false
                 });
                 
                 isScreenSharing = true;
@@ -122,11 +520,18 @@ function initializeApp() {
                     userName: currentUser.name
                 });
                 
+                // Create screen peer for each connected user
                 Object.keys(peers).forEach(userId => {
                     const screenPeer = new SimplePeer({ 
                         initiator: true, 
                         stream: screenStream, 
-                        trickle: false 
+                        trickle: false,
+                        config: {
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' },
+                                { urls: 'stun:stun1.l.google.com:19302' }
+                            ]
+                        }
                     });
                     
                     screenPeer.on('signal', (signal) => {
@@ -136,12 +541,16 @@ function initializeApp() {
                     screenPeers[userId] = screenPeer;
                 });
                 
+                // Handle screen share end
                 screenStream.getVideoTracks()[0].onended = () => {
                     stopScreenShare();
                 };
                 
+                Logger.success('Screen sharing started');
+                showSystemNotification('🖥️ Compartiendo pantalla', 'success');
+                
             } catch (err) {
-                console.error('Error pantalla:', err);
+                Logger.error('Failed to start screen share:', err.message);
                 alert('⚠️ No se pudo compartir la pantalla');
             }
         } else {
@@ -161,10 +570,14 @@ function initializeApp() {
         
         socket.emit('screen-share-stop', { roomId: roomId, userId: currentUser.id });
         
+        // Clean up screen peers
         Object.values(screenPeers).forEach(peer => peer.destroy());
         Object.keys(screenPeers).forEach(key => delete screenPeers[key]);
         
         removeScreenVideo(currentUser.id);
+        
+        Logger.info('Screen sharing stopped');
+        showSystemNotification('🖥️ Compartir pantalla detenido', 'info');
     }
     
     window.toggleDrawMode = function() {
@@ -227,7 +640,10 @@ function initializeApp() {
     
     async function startRecording() {
         try {
-            const displayStream = screenStream || await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            const displayStream = screenStream || await navigator.mediaDevices.getDisplayMedia({ 
+                video: true, 
+                audio: true 
+            });
             
             recordedChunks = [];
             mediaRecorder = new MediaRecorder(displayStream, {
@@ -247,6 +663,7 @@ function initializeApp() {
                 a.click();
                 
                 addSystemMessage('✅ Grabación guardada');
+                showSystemNotification('✅ Grabación guardada', 'success');
             };
             
             mediaRecorder.start();
@@ -258,9 +675,10 @@ function initializeApp() {
             if (recordingIndicator) recordingIndicator.classList.add('active');
             
             addSystemMessage('🔴 Grabación iniciada');
+            Logger.success('Recording started');
             
         } catch (err) {
-            console.error('Error grabación:', err);
+            Logger.error('Failed to start recording:', err.message);
             alert('⚠️ No se pudo iniciar la grabación');
         }
     }
@@ -274,6 +692,8 @@ function initializeApp() {
             const recordingIndicator = document.getElementById('recordingIndicator');
             if (recordBtn) recordBtn.classList.remove('danger');
             if (recordingIndicator) recordingIndicator.classList.remove('active');
+            
+            Logger.info('Recording stopped');
         }
     }
     
@@ -308,6 +728,11 @@ function initializeApp() {
         
         const message = input.value.trim();
         if (!message) return;
+        
+        if (message.length > 500) {
+            alert('⚠️ Mensaje demasiado largo (máximo 500 caracteres)');
+            return;
+        }
         
         socket.emit('chat-message', {
             roomId,
@@ -354,7 +779,7 @@ function initializeApp() {
         const newPassword = document.getElementById('roomPasswordInput')?.value;
         const newRole = document.getElementById('roleSelect')?.value;
         
-        if (newName) {
+        if (newName && newName.length > 0) {
             currentUser.name = newName;
             currentUser.role = newRole || 'participant';
             localStorage.setItem('userName', newName);
@@ -369,18 +794,26 @@ function initializeApp() {
             
             updateParticipantsList();
             addSystemMessage(`✅ Configuración actualizada`);
+            showSystemNotification('✅ Configuración actualizada', 'success');
         }
         
         closeSettings();
     };
     
+    // ═══════════════════════════════════════════════════════
+    // AUDIO FUNCTIONS
+    // ═══════════════════════════════════════════════════════
+    
     async function startAudio() {
         try {
+            Logger.info('Requesting microphone access...');
+            
             localStream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true
+                    autoGainControl: true,
+                    sampleRate: 48000
                 }
             });
             
@@ -391,46 +824,86 @@ function initializeApp() {
             if (micBtn) micBtn.classList.add('active');
             if (micIcon) micIcon.textContent = '🎤';
             
+            Logger.success('Microphone access granted');
+            
+            // Notify server that we're ready
             socket.emit('user-ready', {
                 roomId: roomId,
                 userName: currentUser.name,
                 role: currentUser.role
             });
             
+            // Connect to any existing users that we haven't connected to yet
+            participants.forEach((userData, userId) => {
+                if (!peers[userId]) {
+                    Logger.peer(`Connecting to existing user after audio start: ${userData.userName}`);
+                    connectToNewUser(userId);
+                }
+            });
+            
         } catch (err) {
-            console.error('Error audio:', err);
-            alert('⚠️ No se pudo acceder al micrófono');
+            Logger.error('Failed to access microphone:', err.message);
+            alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos del navegador.');
         }
     }
     
     function connectToNewUser(userId) {
-        if (!localStream) return;
+        if (!localStream) {
+            Logger.warn('Cannot connect to user - no local stream yet');
+            return;
+        }
+        
+        if (peers[userId]) {
+            Logger.warn(`Peer connection already exists for ${userId.slice(0, 8)}...`);
+            return;
+        }
+        
+        Logger.peer(`Creating peer connection as initiator for ${userId.slice(0, 8)}...`);
         
         const peer = new SimplePeer({ 
             initiator: true, 
             stream: localStream, 
-            trickle: false
+            trickle: false,
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
         });
         
         peer.on('signal', (signal) => {
+            Logger.peer(`Sending signal to ${userId.slice(0, 8)}...`);
             socket.emit('signal', { to: userId, signal, roomId });
         });
         
         peer.on('stream', (stream) => {
-            console.log('✅ Recibiendo audio de:', userId);
+            Logger.audio(`Receiving audio stream from ${userId.slice(0, 8)}...`);
             playAudioStream(userId, stream);
         });
         
+        peer.on('connect', () => {
+            Logger.success(`Peer connection established with ${userId.slice(0, 8)}...`);
+        });
+        
         peer.on('error', (err) => {
-            console.error('Error peer connection:', err);
+            Logger.error(`Peer error with ${userId.slice(0, 8)}...:`, err.message);
+        });
+        
+        peer.on('close', () => {
+            Logger.warn(`Peer connection closed with ${userId.slice(0, 8)}...`);
         });
         
         peers[userId] = peer;
     }
     
     function playAudioStream(userId, stream) {
+        // Remove existing audio element if any
         const existingAudio = document.getElementById(`audio-${userId}`);
-        if (existingAudio) existingAudio.remove();
+        if (existingAudio) {
+            Logger.warn(`Removing existing audio element for ${userId.slice(0, 8)}...`);
+            existingAudio.remove();
+        }
         
         const audio = document.createElement('audio');
         audio.id = `audio-${userId}`;
@@ -440,15 +913,25 @@ function initializeApp() {
         audio.style.display = 'none';
         
         audio.addEventListener('loadedmetadata', () => {
-            audio.play().then(() => {
-                console.log('🔊 Audio reproduciendo para:', userId);
-            }).catch(err => {
-                console.error('Error reproduciendo audio:', err);
-            });
+            audio.play()
+                .then(() => {
+                    Logger.audio(`Audio playing for ${userId.slice(0, 8)}...`);
+                })
+                .catch(err => {
+                    Logger.error(`Failed to play audio for ${userId.slice(0, 8)}...:`, err.message);
+                });
+        });
+        
+        audio.addEventListener('error', (e) => {
+            Logger.error(`Audio error for ${userId.slice(0, 8)}...:`, e);
         });
         
         document.body.appendChild(audio);
     }
+    
+    // ═══════════════════════════════════════════════════════
+    // UI HELPER FUNCTIONS
+    // ═══════════════════════════════════════════════════════
     
     function addScreenVideo(userId, stream, userName) {
         removeScreenVideo(userId);
@@ -481,9 +964,6 @@ function initializeApp() {
         const element = document.getElementById(`screen-${userId}`);
         if (element) element.remove();
         
-        const audio = document.getElementById(`audio-${userId}`);
-        if (audio) audio.remove();
-        
         resizeCanvas();
     }
     
@@ -494,9 +974,11 @@ function initializeApp() {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${isOwn ? 'own' : ''}`;
         
+        const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        
         messageDiv.innerHTML = `
-            <div class="sender">${sender}</div>
-            <div class="text">${text}</div>
+            <div class="sender">${sender} <span style="opacity: 0.5; font-size: 0.8em;">${time}</span></div>
+            <div class="text">${escapeHtml(text)}</div>
         `;
         
         messagesDiv.appendChild(messageDiv);
@@ -533,21 +1015,40 @@ function initializeApp() {
         const countSpan = document.getElementById('participantCount');
         
         if (!listDiv || !countSpan) {
-            console.warn('⚠️ Elementos de participantes no encontrados');
+            Logger.warn('Participants list elements not found');
             return;
         }
         
+        const totalCount = participants.size + 1; // +1 for current user
         listDiv.innerHTML = '';
-        countSpan.textContent = participants.size + 1;
+        countSpan.textContent = totalCount;
         
-        addParticipantToList(currentUser.id, currentUser.name, currentUser.role, currentUser.handRaised, true);
+        Logger.info(`Updating participants list: ${totalCount} total users`);
         
+        // Add current user first
+        addParticipantToList(
+            currentUser.id, 
+            currentUser.name, 
+            currentUser.role, 
+            currentUser.handRaised, 
+            false,
+            true
+        );
+        
+        // Add other participants
         participants.forEach((userData, userId) => {
-            addParticipantToList(userId, userData.userName, userData.role || 'participant', userData.handRaised, false);
+            addParticipantToList(
+                userId, 
+                userData.userName, 
+                userData.role || 'participant', 
+                userData.handRaised, 
+                userData.isMuted,
+                false
+            );
         });
     }
     
-    function addParticipantToList(userId, userName, role, handRaised, isSelf) {
+    function addParticipantToList(userId, userName, role, handRaised, isMuted, isSelf) {
         const listDiv = document.getElementById('participantsList');
         if (!listDiv) return;
         
@@ -556,8 +1057,9 @@ function initializeApp() {
         itemDiv.id = `participant-${userId}`;
         
         const initial = userName.charAt(0).toUpperCase();
-        const roleLabel = role === 'host' ? '👑 Host' : '';
+        const roleIcon = role === 'host' ? '👑' : '';
         const handIcon = handRaised ? '✋' : '';
+        const micIcon = isMuted ? '🔇' : '';
         const selfLabel = isSelf ? ' (Tú)' : '';
         
         itemDiv.innerHTML = `
@@ -565,15 +1067,61 @@ function initializeApp() {
                 <div class="participant-avatar">${initial}</div>
                 <div>
                     <div>${userName}${selfLabel}</div>
-                    ${roleLabel ? `<span class="participant-role">${roleLabel}</span>` : ''}
+                    ${roleIcon ? `<span class="participant-role">${roleIcon} Host</span>` : ''}
                 </div>
             </div>
             <div class="participant-status">
                 ${handIcon ? `<span class="status-icon">${handIcon}</span>` : ''}
+                ${micIcon ? `<span class="status-icon">${micIcon}</span>` : ''}
             </div>
         `;
         
         listDiv.appendChild(itemDiv);
+    }
+    
+    function updateConnectionStatus(status) {
+        const statusIndicator = document.getElementById('connectionStatus');
+        if (!statusIndicator) return;
+        
+        statusIndicator.className = 'connection-status';
+        
+        switch(status) {
+            case 'connected':
+                statusIndicator.classList.add('connected');
+                statusIndicator.textContent = '🟢 Conectado';
+                break;
+            case 'disconnected':
+                statusIndicator.classList.add('disconnected');
+                statusIndicator.textContent = '🔴 Desconectado';
+                break;
+            case 'reconnecting':
+                statusIndicator.classList.add('reconnecting');
+                statusIndicator.textContent = '🟡 Reconectando...';
+                break;
+            case 'failed':
+                statusIndicator.classList.add('failed');
+                statusIndicator.textContent = '❌ Error de conexión';
+                break;
+        }
+    }
+    
+    function showSystemNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `system-notification ${type}`;
+        notification.textContent = message;
+        
+        // Add to document
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
     
     function resizeCanvas() {
@@ -592,129 +1140,15 @@ function initializeApp() {
         }
     }
     
-    socket.on('user-connected', (userData) => {
-        console.log('👤 Usuario conectó:', userData);
-        participants.set(userData.userId, userData);
-        updateParticipantsList();
-        connectToNewUser(userData.userId);
-        addSystemMessage(`${userData.userName} se unió a la sala`);
-    });
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     
-    socket.on('user-disconnected', (userId) => {
-        const userName = participants.get(userId)?.userName || 'Usuario';
-        
-        if (peers[userId]) {
-            peers[userId].destroy();
-            delete peers[userId];
-        }
-        
-        if (screenPeers[userId]) {
-            screenPeers[userId].destroy();
-            delete screenPeers[userId];
-            removeScreenVideo(userId);
-        }
-        
-        participants.delete(userId);
-        updateParticipantsList();
-        addSystemMessage(`${userName} salió de la sala`);
-    });
-    
-    socket.on('signal', ({ from, signal }) => {
-        if (!peers[from]) {
-            const peer = new SimplePeer({ 
-                initiator: false, 
-                stream: localStream, 
-                trickle: false
-            });
-            
-            peer.on('signal', (sig) => {
-                socket.emit('signal', { to: from, signal: sig, roomId });
-            });
-            
-            peer.on('stream', (stream) => {
-                console.log('✅ Recibiendo audio de:', from);
-                playAudioStream(from, stream);
-            });
-            
-            peer.on('error', (err) => {
-                console.error('Error peer connection:', err);
-            });
-            
-            peers[from] = peer;
-            peer.signal(signal);
-        } else {
-            peers[from].signal(signal);
-        }
-    });
-    
-    socket.on('screen-signal', ({ from, signal }) => {
-        if (!screenPeers[from]) {
-            const screenPeer = new SimplePeer({ initiator: false, trickle: false });
-            
-            screenPeer.on('signal', (sig) => {
-                socket.emit('screen-signal', { to: from, signal: sig, roomId });
-            });
-            
-            screenPeer.on('stream', (stream) => {
-                const userName = participants.get(from)?.userName || 'Usuario';
-                addScreenVideo(from, stream, userName);
-            });
-            
-            screenPeers[from] = screenPeer;
-            screenPeer.signal(signal);
-        } else {
-            screenPeers[from].signal(signal);
-        }
-    });
-    
-    socket.on('screen-share-stopped', ({ userId }) => {
-        removeScreenVideo(userId);
-    });
-    
-    socket.on('hand-raised', ({ userId, userName, raised }) => {
-        const participant = participants.get(userId);
-        if (participant) {
-            participant.handRaised = raised;
-            updateParticipantsList();
-            if (raised) {
-                addSystemMessage(`✋ ${userName} levantó la mano`);
-            }
-        }
-    });
-    
-    socket.on('chat-message', ({ userName, message }) => {
-        addChatMessage(userName, message, false);
-    });
-    
-    socket.on('reaction', ({ userName, emoji }) => {
-        showFloatingReaction(emoji);
-        addSystemMessage(`${userName} reaccionó con ${emoji}`);
-    });
-    
-    socket.on('draw-line', ({ fromX, fromY, toX, toY, color }) => {
-        if (ctx) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(fromX, fromY);
-            ctx.lineTo(toX, toY);
-            ctx.stroke();
-        }
-    });
-    
-    socket.on('clear-drawing', () => {
-        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-    
-    socket.on('user-updated', ({ userId, userName, role }) => {
-        const participant = participants.get(userId);
-        if (participant) {
-            participant.userName = userName;
-            participant.role = role;
-            updateParticipantsList();
-        }
-    });
+    // ═══════════════════════════════════════════════════════
+    // CANVAS DRAWING
+    // ═══════════════════════════════════════════════════════
     
     if (canvas) {
         canvas.addEventListener('mousedown', (e) => {
@@ -763,8 +1197,19 @@ function initializeApp() {
         });
     }
     
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 100);
-    setTimeout(updateParticipantsList, 1000);
+    // ═══════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════════════
+    
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        resizeWhiteboard();
+    });
+    
+    setTimeout(() => {
+        resizeCanvas();
+        updateParticipantsList();
+    }, 100);
+    
+    Logger.success('OZYMEET Client initialized successfully');
 }
-
