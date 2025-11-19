@@ -1,4 +1,3 @@
-// ===== CONFIGURACIÓN INICIAL =====
 const socket = io();
 const roomId = new URLSearchParams(window.location.search).get('room');
 const peers = {};
@@ -14,7 +13,6 @@ let isRecording = false;
 let mediaRecorder = null;
 let recordedChunks = [];
 
-// Usuario actual
 let currentUser = {
     id: null,
     name: localStorage.getItem('userName') || 'Usuario',
@@ -22,18 +20,15 @@ let currentUser = {
     handRaised: false
 };
 
-// ===== ESPERAR A QUE EL DOM ESTÉ LISTO =====
 window.addEventListener('DOMContentLoaded', function() {
     console.log('✅ DOM cargado');
     initializeApp();
 });
 
 function initializeApp() {
-    // Canvas para dibujar
     const canvas = document.getElementById('drawCanvas');
     const ctx = canvas ? canvas.getContext('2d') : null;
     
-    // Pizarra compartida
     const whiteboardCanvas = document.getElementById('whiteboardCanvas');
     const whiteboardCtx = whiteboardCanvas ? whiteboardCanvas.getContext('2d') : null;
     
@@ -42,13 +37,41 @@ function initializeApp() {
     let lastX = 0;
     let lastY = 0;
     
-    // ===== CONEXIÓN SOCKET =====
     socket.on('connect', () => {
         currentUser.id = socket.id;
-        console.log('🔌 Conectado con ID:', socket.id);
+        console.log('🔌 Conectado:', socket.id);
     });
     
-    // ===== FUNCIONES GLOBALES =====
+    window.joinRoom = function() {
+        const nameInput = document.getElementById('welcomeNameInput');
+        const passwordInput = document.getElementById('welcomePasswordInput');
+        
+        if (!nameInput) return;
+        
+        const name = nameInput.value.trim();
+        const password = passwordInput ? passwordInput.value : '';
+        
+        if (!name) {
+            alert('⚠️ Por favor ingresa tu nombre');
+            return;
+        }
+        
+        currentUser.name = name;
+        localStorage.setItem('userName', name);
+        if (password) localStorage.setItem('roomPassword', password);
+        
+        const welcomeModal = document.getElementById('welcomeModal');
+        if (welcomeModal) welcomeModal.classList.remove('active');
+        
+        socket.emit('join-room', {
+            roomId: roomId,
+            userName: name,
+            password: password
+        });
+        
+        startAudio();
+    };
+    
     window.toggleMic = function() {
         if (!localStream) {
             startAudio();
@@ -351,37 +374,6 @@ function initializeApp() {
         closeSettings();
     };
     
-    window.joinRoom = function() {
-        const nameInput = document.getElementById('welcomeNameInput');
-        const passwordInput = document.getElementById('welcomePasswordInput');
-        
-        if (!nameInput) return;
-        
-        const name = nameInput.value.trim();
-        const password = passwordInput ? passwordInput.value : '';
-        
-        if (!name) {
-            alert('⚠️ Por favor ingresa tu nombre');
-            return;
-        }
-        
-        currentUser.name = name;
-        localStorage.setItem('userName', name);
-        if (password) localStorage.setItem('roomPassword', password);
-        
-        const welcomeModal = document.getElementById('welcomeModal');
-        if (welcomeModal) welcomeModal.classList.remove('active');
-        
-        socket.emit('join-room', {
-            roomId: roomId,
-            userName: name,
-            password: password
-        });
-        
-        startAudio();
-    };
-    
-    // ===== FUNCIONES AUXILIARES =====
     async function startAudio() {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ 
@@ -569,7 +561,6 @@ function initializeApp() {
         }
     }
     
-    // ===== EVENTOS SOCKET =====
     socket.on('user-connected', (userData) => {
         console.log('Usuario conectó:', userData);
         participants.set(userData.userId, userData);
@@ -689,7 +680,6 @@ function initializeApp() {
         }
     });
     
-    // ===== EVENTOS DE CANVAS =====
     if (canvas) {
         canvas.addEventListener('mousedown', (e) => {
             if (!isDrawingMode) return;
@@ -737,11 +727,11 @@ function initializeApp() {
         });
     }
     
-    // ===== RESIZE EVENTS =====
     window.addEventListener('resize', resizeCanvas);
     setTimeout(resizeCanvas, 100);
     setTimeout(updateParticipantsList, 1000);
 }
+
 
 
 
