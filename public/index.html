@@ -98,6 +98,7 @@
             color: white;
             font-size: 16px;
             margin-bottom: 15px;
+            text-transform: uppercase;
         }
         
         input::placeholder {
@@ -131,6 +132,57 @@
             font-weight: bold;
             margin-right: 8px;
         }
+
+        .share-link {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.2);
+            border-radius: 10px;
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            display: none;
+        }
+
+        .share-link.active {
+            display: block;
+        }
+
+        .share-link h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .link-box {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .link-box input {
+            flex: 1;
+            margin: 0;
+            font-size: 14px;
+            text-transform: none;
+        }
+
+        .link-box button {
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            p {
+                font-size: 16px;
+            }
+            
+            button {
+                font-size: 16px;
+                padding: 12px 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -152,6 +204,17 @@
             <button class="btn-join" onclick="joinRoom()">
                 ✅ Unirse
             </button>
+        </div>
+
+        <div class="share-link" id="shareLink">
+            <h3>📋 Comparte este link con otros:</h3>
+            <div class="link-box">
+                <input type="text" id="shareLinkInput" readonly>
+                <button class="btn-create" onclick="copyLink()">📋 Copiar</button>
+            </div>
+            <p style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
+                Código de sala: <strong id="shareRoomCode"></strong>
+            </p>
         </div>
         
         <div class="features">
@@ -175,7 +238,11 @@
     <script>
         function toggleJoinInput() {
             const joinGroup = document.getElementById('joinGroup');
+            const shareLink = document.getElementById('shareLink');
+            
             joinGroup.classList.toggle('active');
+            shareLink.classList.remove('active');
+            
             if (joinGroup.classList.contains('active')) {
                 document.getElementById('roomCodeInput').focus();
             }
@@ -192,13 +259,26 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = `/room?room=${data.roomId}`;
+                    console.log('✅ Sala creada:', data.roomId);
+                    
+                    // Mostrar link para compartir
+                    const fullLink = `${window.location.origin}/room?room=${data.roomId}`;
+                    document.getElementById('shareLinkInput').value = fullLink;
+                    document.getElementById('shareRoomCode').textContent = data.roomId;
+                    document.getElementById('shareLink').classList.add('active');
+                    document.getElementById('joinGroup').classList.remove('active');
+                    
+                    // Redirigir automáticamente después de 3 segundos
+                    setTimeout(() => {
+                        window.location.href = `/room?room=${data.roomId}`;
+                    }, 3000);
+                    
                 } else {
-                    alert('Error al crear sala');
+                    alert('❌ Error al crear sala');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al crear sala');
+                alert('❌ Error al crear sala. Por favor intenta de nuevo.');
             }
         }
         
@@ -210,7 +290,21 @@
                 return;
             }
             
+            console.log('🚪 Uniéndose a sala:', roomCode);
             window.location.href = `/room?room=${roomCode}`;
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById('shareLinkInput');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                alert('✅ Link copiado al portapapeles');
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('⚠️ Por favor copia el link manualmente');
+            });
         }
         
         // Enter para unirse
@@ -220,6 +314,19 @@
                 input.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') joinRoom();
                 });
+                
+                // Auto-convertir a mayúsculas
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            }
+
+            // Si viene de un link directo con código, redirigir automáticamente
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            if (roomParam && roomParam.length === 6) {
+                console.log('🔗 Link directo detectado, redirigiendo a sala:', roomParam);
+                window.location.href = `/room?room=${roomParam.toUpperCase()}`;
             }
         });
     </script>
