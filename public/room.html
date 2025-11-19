@@ -9,6 +9,25 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
 </head>
 <body>
+    <!-- MODAL DE BIENVENIDA (DEBE APARECER PRIMERO) -->
+    <div class="modal active" id="welcomeModal">
+        <div class="modal-content">
+            <h2>👋 ¡Bienvenido a OZYMEET!</h2>
+            <p style="margin-bottom: 20px; opacity: 0.9;">Ingresa tu nombre para unirte a la sala</p>
+            
+            <input type="text" id="welcomeNameInput" placeholder="Tu nombre" autofocus>
+            
+            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Contraseña de sala (si tiene):</label>
+            <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay contraseña">
+            
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="control-btn active" onclick="joinRoom()" style="width: 100%;">
+                    🚀 Unirse a la Sala
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- HEADER CON CONTROLES PRINCIPALES -->
     <div class="room-header">
         <div class="room-info">
@@ -17,49 +36,40 @@
         </div>
         
         <div class="controls">
-            <!-- Botón Micrófono -->
             <button class="control-btn" id="micBtn" onclick="toggleMic()" title="Activar/Desactivar Micrófono">
                 <span id="micIcon">🎤</span> Micrófono
             </button>
             
-            <!-- Botón Pantalla -->
             <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" title="Compartir Pantalla">
                 <span>🖥️</span> Pantalla
             </button>
             
-            <!-- Botón Dibujar -->
             <button class="control-btn" id="drawBtn" onclick="toggleDrawMode()" title="Activar Lápiz">
                 <span>✏️</span> Dibujar
             </button>
             
-            <!-- Botón Pizarra -->
             <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" title="Pizarra Compartida">
                 <span>📝</span> Pizarra
             </button>
             
-            <!-- Botón Grabar -->
             <button class="control-btn" id="recordBtn" onclick="toggleRecording()" title="Grabar Reunión">
                 <span>🔴</span> Grabar
             </button>
             
-            <!-- Botón Levantar Mano -->
             <button class="control-btn" id="handBtn" onclick="raiseHand()" title="Levantar Mano">
                 <span>✋</span> Mano
             </button>
             
-            <!-- Botón Configuración -->
             <button class="control-btn" id="settingsBtn" onclick="openSettings()" title="Configuración">
                 <span>⚙️</span> Config
             </button>
             
-            <!-- Indicador de Grabación -->
             <div class="recording-indicator" id="recordingIndicator">
                 <div class="recording-dot"></div>
                 <span>GRABANDO</span>
             </div>
         </div>
         
-        <!-- Reacciones -->
         <div class="reactions-bar">
             <button class="reaction-btn" onclick="sendReaction('👍')" title="Me gusta">👍</button>
             <button class="reaction-btn" onclick="sendReaction('❤️')" title="Me encanta">❤️</button>
@@ -71,16 +81,10 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
-        <!-- ÁREA DE PANTALLAS COMPARTIDAS -->
         <div class="screen-area">
-            <div class="screen-grid" id="screenContainer">
-                <!-- Videos de pantalla compartida se agregan aquí dinámicamente -->
-            </div>
-            
-            <!-- Canvas para dibujar sobre pantallas -->
+            <div class="screen-grid" id="screenContainer"></div>
             <canvas id="drawCanvas"></canvas>
             
-            <!-- Herramientas de dibujo -->
             <div class="draw-tools" id="drawTools">
                 <div class="color-picker">
                     <div class="color-btn" style="background: #FF0000;" onclick="setDrawColor('#FF0000')"></div>
@@ -94,32 +98,24 @@
                 </button>
             </div>
             
-            <!-- Pizarra Compartida -->
             <div class="whiteboard-container" id="whiteboardContainer">
                 <canvas id="whiteboardCanvas"></canvas>
             </div>
         </div>
 
-        <!-- SIDEBAR DERECHO -->
         <div class="sidebar">
-            <!-- CHAT -->
             <div class="chat-container">
                 <h3>💬 Chat</h3>
-                <div class="chat-messages" id="chatMessages">
-                    <!-- Mensajes aparecen aquí -->
-                </div>
+                <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-area">
                     <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKey(event)">
                     <button onclick="sendChatMessage()">Enviar</button>
                 </div>
             </div>
 
-            <!-- PARTICIPANTES -->
             <div class="participants-container">
                 <h3>👥 Participantes (<span id="participantCount">0</span>)</h3>
-                <div id="participantsList">
-                    <!-- Lista de participantes aparece aquí -->
-                </div>
+                <div id="participantsList"></div>
             </div>
         </div>
     </div>
@@ -148,44 +144,20 @@
         </div>
     </div>
 
-    <!-- MODAL DE NOMBRE AL ENTRAR -->
-    <div class="modal active" id="welcomeModal">
-        <div class="modal-content">
-            <h2>👋 ¡Bienvenido a OZYMEET!</h2>
-            <p style="margin-bottom: 20px; opacity: 0.9;">Ingresa tu nombre para unirte a la sala</p>
-            
-            <input type="text" id="welcomeNameInput" placeholder="Tu nombre" autofocus>
-            
-            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Contraseña de sala (si tiene):</label>
-            <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay contraseña">
-            
-            <div class="modal-buttons" style="margin-top: 20px;">
-                <button class="control-btn active" onclick="joinRoom()" style="width: 100%;">
-                    🚀 Unirse a la Sala
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script Principal -->
     <script src="client.js"></script>
     
     <script>
-        // Mostrar código de sala en header
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
         const roomCodeDisplay = document.getElementById('roomCodeDisplay');
         if (roomCodeDisplay) {
             roomCodeDisplay.textContent = roomCode || 'N/A';
-            
-            // Copiar código al hacer click
             roomCodeDisplay.addEventListener('click', () => {
                 navigator.clipboard.writeText(roomCode);
                 alert('✅ Código copiado al portapapeles');
             });
         }
         
-        // Presionar Enter en el input de nombre
         const welcomeNameInput = document.getElementById('welcomeNameInput');
         if (welcomeNameInput) {
             welcomeNameInput.addEventListener('keypress', (e) => {
@@ -195,5 +167,7 @@
     </script>
 </body>
 </html>
+
+
 
 
