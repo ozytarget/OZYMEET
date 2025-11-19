@@ -1,50 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>OZYMEET - Sala</title>
-<style>
-body{margin:0;font-family:Arial;background:#0f0f0f;color:#fff}
-.header{background:#1e3c72;padding:15px 30px;display:flex;justify-content:space-between}
-.main{display:flex;height:calc(100vh - 140px)}
-.screen{flex:1;background:#1a1a1a;display:flex;align-items:center;justify-content:center;padding:20px}
-#shared-screen{max-width:100%;max-height:100%;border-radius:10px}
-.no-screen{text-align:center;color:#666}
-.sidebar{width:300px;background:#1e1e1e;border-left:1px solid #333;padding:20px;overflow-y:auto}
-.participant{background:#2a2a2a;padding:10px;border-radius:8px;margin:10px 0}
-.controls{background:#1e1e1e;padding:20px;display:flex;gap:10px;justify-content:center}
-button{padding:15px 25px;border:none;border-radius:10px;font-size:16px;cursor:pointer;color:#fff}
-.btn-mute{background:#10b981}
-.btn-mute.muted{background:#ef4444}
-.btn-screen{background:#3b82f6}
-.btn-screen.active{background:#ef4444}
-.btn-leave{background:#ef4444}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OZYMEET - Sala de Reunión</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
 </head>
 <body>
-<div class="header">
-<h1>OZYMEET</h1>
-<div id="room-name">Sala: ...</div>
-</div>
-<div class="main">
-<div class="screen">
-<video id="shared-screen" autoplay playsinline style="display:none"></video>
-<div class="no-screen" id="no-screen-msg">
-<h2>No hay pantalla compartida</h2>
-<p>Esperando...</p>
-</div>
-</div>
-<div class="sidebar">
-<h3>Participantes (<span id="participant-count">0</span>)</h3>
-<div id="participants-list"></div>
-</div>
-</div>
-<div class="controls">
-<button class="btn-mute" id="btn-mute"><span id="mute-icon">🎤</span> <span id="mute-text">Mutear</span></button>
-<button class="btn-screen" id="btn-screen"><span id="screen-icon">🖥️</span> <span id="screen-text">Compartir</span></button>
-<button class="btn-leave" id="btn-leave">Salir</button>
-</div>
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+    <!-- HEADER CON CONTROLES PRINCIPALES -->
+    <div class="room-header">
+        <div class="room-info">
+            <h2>🎯 OZYMEET</h2>
+            <div class="room-code">Código de sala: <span id="roomCodeDisplay"></span></div>
+        </div>
+        
+        <div class="controls">
+            <!-- Botón Micrófono -->
+            <button class="control-btn" id="micBtn" onclick="toggleMic()" title="Activar/Desactivar Micrófono">
+                <span id="micIcon">🎤</span> Micrófono
+            </button>
+            
+            <!-- Botón Pantalla -->
+            <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" title="Compartir Pantalla">
+                <span>🖥️</span> Pantalla
+            </button>
+            
+            <!-- Botón Dibujar -->
+            <button class="control-btn" id="drawBtn" onclick="toggleDrawMode()" title="Activar Lápiz">
+                <span>✏️</span> Dibujar
+            </button>
+            
+            <!-- Botón Pizarra -->
+            <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" title="Pizarra Compartida">
+                <span>📝</span> Pizarra
+            </button>
+            
+            <!-- Botón Grabar -->
+            <button class="control-btn" id="recordBtn" onclick="toggleRecording()" title="Grabar Reunión">
+                <span>🔴</span> Grabar
+            </button>
+            
+            <!-- Botón Levantar Mano -->
+            <button class="control-btn" id="handBtn" onclick="raiseHand()" title="Levantar Mano">
+                <span>✋</span> Mano
+            </button>
+            
+            <!-- Botón Configuración -->
+            <button class="control-btn" id="settingsBtn" onclick="openSettings()" title="Configuración">
+                <span>⚙️</span> Config
+            </button>
+            
+            <!-- Indicador de Grabación -->
+            <div class="recording-indicator" id="recordingIndicator">
+                <div class="recording-dot"></div>
+                <span>GRABANDO</span>
+            </div>
+        </div>
+        
+        <!-- Reacciones -->
+        <div class="reactions-bar">
+            <button class="reaction-btn" onclick="sendReaction('👍')" title="Me gusta">👍</button>
+            <button class="reaction-btn" onclick="sendReaction('❤️')" title="Me encanta">❤️</button>
+            <button class="reaction-btn" onclick="sendReaction('😂')" title="Risa">😂</button>
+            <button class="reaction-btn" onclick="sendReaction('👏')" title="Aplauso">👏</button>
+            <button class="reaction-btn" onclick="sendReaction('🎉')" title="Celebración">🎉</button>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <!-- ÁREA DE PANTALLAS COMPARTIDAS -->
+        <div class="screen-area">
+            <div class="screen-grid" id="screenContainer">
+                <!-- Videos de pantalla compartida se agregan aquí dinámicamente -->
+            </div>
+            
+            <!-- Canvas para dibujar sobre pantallas -->
+            <canvas id="drawCanvas"></canvas>
+            
+            <!-- Herramientas de dibujo -->
+            <div class="draw-tools" id="drawTools">
+                <div class="color-picker">
+                    <div class="color-btn" style="background: #FF0000;" onclick="setDrawColor('#FF0000')"></div>
+                    <div class="color-btn" style="background: #00FF00;" onclick="setDrawColor('#00FF00')"></div>
+                    <div class="color-btn" style="background: #0000FF;" onclick="setDrawColor('#0000FF')"></div>
+                    <div class="color-btn" style="background: #FFFF00;" onclick="setDrawColor('#FFFF00')"></div>
+                    <div class="color-btn" style="background: #000000;" onclick="setDrawColor('#000000')"></div>
+                </div>
+                <button class="control-btn" onclick="clearDrawing()" style="padding: 8px 15px;">
+                    <span>🗑️</span> Limpiar
+                </button>
+            </div>
+            
+            <!-- Pizarra Compartida -->
+            <div class="whiteboard-container" id="whiteboardContainer">
+                <canvas id="whiteboardCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- SIDEBAR DERECHO -->
+        <div class="sidebar">
+            <!-- CHAT -->
+            <div class="chat-container">
+                <h3>💬 Chat</h3>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Mensajes aparecen aquí -->
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKey(event)">
+                    <button onclick="sendChatMessage()">Enviar</button>
+                </div>
+            </div>
+
+            <!-- PARTICIPANTES -->
+            <div class="participants-container">
+                <h3>👥 Participantes (<span id="participantCount">1</span>)</h3>
+                <div id="participantsList">
+                    <!-- Lista de participantes aparece aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURACIÓN -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>⚙️ Configuración</h2>
+            
+            <label>Tu Nombre:</label>
+            <input type="text" id="userNameInput" placeholder="Ingresa tu nombre" value="">
+            
+            <label>Contraseña de Sala (Host):</label>
+            <input type="password" id="roomPasswordInput" placeholder="Opcional - solo para host">
+            
+            <label>Rol:</label>
+            <select id="roleSelect" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 2px solid rgba(255,255,255,0.3);">
+                <option value="participant">👤 Participante</option>
+                <option value="host">👑 Host</option>
+            </select>
+            
+            <div class="modal-buttons">
+                <button class="control-btn" onclick="closeSettings()">Cancelar</button>
+                <button class="control-btn active" onclick="saveSettings()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE NOMBRE AL ENTRAR -->
+    <div class="modal active" id="welcomeModal">
+        <div class="modal-content">
+            <h2>👋 ¡Bienvenido a OZYMEET!</h2>
+            <p style="margin-bottom: 20px; opacity: 0.9;">Ingresa tu nombre para unirte a la sala</p>
+            
+            <input type="text" id="welcomeNameInput" placeholder="Tu nombre" autofocus>
+            
+            <label style="display: block; margin-bottom: 5px; font-size: 14px;">Contraseña de sala (si tiene):</label>
+            <input type="password" id="welcomePasswordInput" placeholder="Dejar vacío si no hay contraseña">
+            
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="control-btn active" onclick="joinRoom()" style="width: 100%;">
+                    🚀 Unirse a la Sala
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Principal -->
+    <script src="client.js"></script>
+    
+    <script>
+        // Mostrar código de sala en header
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        document.getElementById('roomCodeDisplay').textContent = roomCode || 'N/A';
+        
+        // Función para unirse a la sala
+        function joinRoom() {
+            const name = document.getElementById('welcomeNameInput').value.trim();
+            const password = document.getElementById('welcomePasswordInput').value;
+            
+            if (!name) {
+                alert('⚠️ Por favor ingresa tu nombre');
+                return;
+            }
+            
+            // Guardar nombre en localStorage
+            localStorage.setItem('userName', name);
+            localStorage.setItem('roomPassword', password);
+            
+            // Cerrar modal y empezar
+            document.getElementById('welcomeModal').classList.remove('active');
+            startAudio();
+        }
+        
+        // Presionar Enter para unirse
+        document.getElementById('welcomeNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') joinRoom();
+        });
+        
+        // Copiar código de sala
+        document.getElementById('roomCodeDisplay').addEventListener('click', () => {
+            navigator.clipboard.writeText(roomCode);
+            alert('✅ Código copiado al portapapeles');
+        });
+    </script>
 </body>
 </html>
