@@ -375,7 +375,7 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log('╔════════════════════════════════════════╗');
     console.log('║                                        ║');
-    console.log('║        🎯 TRADING SERVER 🎯           ║');
+    console.log('║        🎯 OZYMEET SERVER 🎯           ║');
     console.log('║                                        ║');
     console.log('╚════════════════════════════════════════╝');
     console.log('');
