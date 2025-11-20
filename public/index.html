@@ -3,240 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET - Trading Conference Platform</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>OZYMEET</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #050816 100%);
-            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            color: #fff;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
-        
-        .landing-container {
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #001a0d 0%, #000000 100%);
+            z-index: 0;
+        }
+
+        .grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 480px;
+            width: 90%;
+        }
+
+        .logo-container {
             text-align: center;
-            padding: 40px;
-            max-width: 600px;
+            margin-bottom: 48px;
         }
-        
+
         .logo {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #00ff88, #00cc6e);
+            font-size: 64px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 15px;
+            background-clip: text;
+            margin-bottom: 8px;
+            text-transform: uppercase;
         }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 40px;
+
+        .tagline {
+            font-size: 13px;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
-        
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-top: 40px;
+
+        .main-card {
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            border-radius: 16px;
+            padding: 40px 32px;
+            backdrop-filter: blur(20px);
         }
-        
-        .btn {
-            padding: 18px 35px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+
+        .input-container {
+            position: relative;
+            margin-bottom: 16px;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #00ff88, #00cc6e);
-            color: #0a0e27;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-        }
-        
-        .features {
-            margin-top: 50px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-        }
-        
-        .feature {
-            background: rgba(255, 255, 255, 0.05);
+
+        .input-container input {
+            width: 100%;
             padding: 20px;
+            font-size: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
+            color: #fff;
+            outline: none;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .input-container input:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .input-container input::placeholder {
+            color: #555;
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-join {
+            background: #00ff88;
+            color: #000;
+            margin-bottom: 12px;
+        }
+
+        .btn-join:hover {
+            background: #00cc6a;
+            transform: translateY(-1px);
+        }
+
+        .btn-join:active {
+            transform: translateY(0);
+        }
+
+        .separator {
+            text-align: center;
+            margin: 24px 0;
+            color: #444;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .separator::before,
+        .separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .separator::before {
+            left: 0;
+        }
+
+        .separator::after {
+            right: 0;
+        }
+
+        .btn-create {
+            background: transparent;
+            color: #00ff88;
             border: 1px solid rgba(0, 255, 136, 0.2);
         }
-        
-        .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
+
+        .btn-create:hover {
+            background: rgba(0, 255, 136, 0.05);
+            border-color: rgba(0, 255, 136, 0.4);
         }
-        
-        .feature-text {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: pulse 4s ease-in-out infinite;
         }
-        
-        .input-container {
-            display: none;
-            margin-top: 30px;
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.1); }
         }
-        
-        .input-container.active {
-            display: block;
-        }
-        
-        input {
-            width: 100%;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            color: white;
-            font-size: 1rem;
-            margin-bottom: 15px;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #00ff88;
-        }
-        
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+
+        @media (max-width: 600px) {
+            .logo {
+                font-size: 48px;
+            }
+            
+            .main-card {
+                padding: 32px 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="landing-container">
-        <div class="logo">🎯📊💹</div>
-        <h1>OZYMEET</h1>
-        <p class="subtitle">Professional Trading Conference Platform</p>
-        
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">🎤</div>
-                <div class="feature-text">Audio HD 20 traders</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🖥️</div>
-                <div class="feature-text">2 pantallas simultáneas</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">✏️</div>
-                <div class="feature-text">Dibujo colaborativo</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🐂🐻</div>
-                <div class="feature-text">Reacciones Trading</div>
-            </div>
+    <div class="background"></div>
+    <div class="grid"></div>
+    <div class="glow"></div>
+
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo">OZYMEET</div>
+            <div class="tagline">Professional Trading Conference</div>
         </div>
-        
-        <div id="initialButtons" class="action-buttons">
-            <button class="btn btn-primary" onclick="showCreateRoom()">
-                🚀 Crear Nueva Sala
+
+        <div class="main-card">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="roomInput" 
+                    placeholder="ROOM CODE"
+                    maxlength="12"
+                    autocomplete="off"
+                >
+            </div>
+
+            <button class="btn btn-join" onclick="joinRoom()">
+                JOIN ROOM
             </button>
-            <button class="btn btn-secondary" onclick="showJoinRoom()">
-                🔗 Unirse a Sala Existente
+
+            <div class="separator">OR</div>
+
+            <button class="btn btn-create" onclick="createRoom()">
+                CREATE NEW ROOM
             </button>
-        </div>
-        
-        <div id="createRoomInput" class="input-container">
-            <h3 style="margin-bottom: 20px;">Crear Nueva Sala</h3>
-            <input type="text" id="createRoomPassword" placeholder="Contraseña (opcional)">
-            <button class="btn btn-primary" onclick="createRoom()">Crear Sala</button>
-            <button class="btn btn-secondary" onclick="goBack()" style="margin-top: 10px;">Atrás</button>
-        </div>
-        
-        <div id="joinRoomInput" class="input-container">
-            <h3 style="margin-bottom: 20px;">Unirse a Sala</h3>
-            <input type="text" id="joinRoomCode" placeholder="Código de sala (6 dígitos)">
-            <button class="btn btn-primary" onclick="joinRoom()">Entrar</button>
-            <button class="btn btn-secondary" onclick="goBack()" style="margin-top: 10px;">Atrás</button>
         </div>
     </div>
-    
+
     <script>
-        function showCreateRoom() {
-            document.getElementById('initialButtons').style.display = 'none';
-            document.getElementById('createRoomInput').classList.add('active');
+        function generateRoomId() {
+            return Math.random().toString(36).substring(2, 10).toUpperCase();
         }
-        
-        function showJoinRoom() {
-            document.getElementById('initialButtons').style.display = 'none';
-            document.getElementById('joinRoomInput').classList.add('active');
-        }
-        
-        function goBack() {
-            document.getElementById('createRoomInput').classList.remove('active');
-            document.getElementById('joinRoomInput').classList.remove('active');
-            document.getElementById('initialButtons').style.display = 'flex';
-        }
-        
-        function createRoom() {
-            const password = document.getElementById('createRoomPassword').value;
-            const roomId = Math.floor(100000 + Math.random() * 900000);
-            
-            if (password) {
-                localStorage.setItem(`room_${roomId}_password`, password);
-            }
-            
-            window.location.href = `/room.html?room=${roomId}`;
-        }
-        
+
         function joinRoom() {
-            const roomCode = document.getElementById('joinRoomCode').value.trim();
+            const roomInput = document.getElementById('roomInput');
+            const roomId = roomInput.value.trim();
             
-            if (!roomCode || roomCode.length !== 6) {
-                alert('⚠️ Por favor ingresa un código de sala válido (6 dígitos)');
-                return;
+            if (roomId) {
+                window.location.href = `/room/${roomId}`;
+            } else {
+                roomInput.style.borderColor = 'rgba(255, 68, 68, 0.5)';
+                setTimeout(() => {
+                    roomInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }, 500);
             }
-            
-            window.location.href = `/room.html?room=${roomCode}`;
         }
-        
-        // Allow Enter key to join
-        document.getElementById('joinRoomCode')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') joinRoom();
+
+        function createRoom() {
+            const roomId = generateRoomId();
+            window.location.href = `/room/${roomId}`;
+        }
+
+        document.getElementById('roomInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinRoom();
+            }
+        });
+
+        document.getElementById('roomInput').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
         });
     </script>
 </body>
 </html>
+
