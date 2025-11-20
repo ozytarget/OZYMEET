@@ -339,7 +339,6 @@
             transform: scale(1.1);
         }
 
-        /* CHAT COMPACTO */
         .chat-container {
             position: fixed;
             right: 20px;
@@ -404,7 +403,6 @@
             max-height: 320px;
         }
 
-        /* MENSAJES FLOTANTES SIN MARCO */
         .chat-message {
             padding: 8px 12px;
             border-radius: 12px;
@@ -637,7 +635,6 @@
         </div>
     </div>
 
-    <!-- CHAT COMPACTO -->
     <div class="chat-container" id="chatContainer">
         <div class="chat-header">
             <h3><i class="fas fa-comment"></i> Chat</h3>
@@ -675,7 +672,6 @@
         let isDrawing = false;
         let drawingContext = null;
 
-        const roomId = sessionData.roomId;
         const userName = sessionData.userName;
         const userRole = sessionData.role || 'guest';
 
@@ -703,9 +699,9 @@
                 console.log('✅ Audio capturado');
                 
                 socket.emit('join-room', {
-                    roomId: roomId,
+                    roomId: 'TRADING2025',
                     userName: userName,
-                    password: '0909'
+                    password: userRole === 'admin' ? '0909' : ''
                 });
                 
                 initControls();
@@ -782,7 +778,7 @@
                 });
 
                 peer.on('signal', signal => {
-                    socket.emit('signal', { to: userId, signal, roomId });
+                    socket.emit('signal', { to: userId, signal, roomId: 'TRADING2025' });
                 });
 
                 peer.on('stream', remoteStream => {
@@ -808,7 +804,7 @@
                     });
 
                     peer.on('signal', responseSignal => {
-                        socket.emit('signal', { to: from, signal: responseSignal, roomId });
+                        socket.emit('signal', { to: from, signal: responseSignal, roomId: 'TRADING2025' });
                     });
 
                     peer.on('stream', remoteStream => {
@@ -931,7 +927,7 @@
             document.querySelectorAll('.reaction-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const emoji = btn.dataset.emoji;
-                    socket.emit('reaction', { emoji, roomId, userId: socket.id, userName });
+                    socket.emit('reaction', { emoji, roomId: 'TRADING2025', userId: socket.id, userName });
                     showFloatingEmoji(emoji);
                 });
             });
@@ -947,7 +943,6 @@
                 const video = document.getElementById('sharedScreen');
                 video.srcObject = screenStream;
                 
-                // Esperar a que el video cargue metadata
                 video.onloadedmetadata = () => {
                     document.getElementById('screenWrapper').classList.add('active');
                     document.getElementById('noScreenMessage').style.display = 'none';
@@ -1065,7 +1060,7 @@
 
             eraserBtn.addEventListener('click', () => {
                 clearCanvas();
-                socket.emit('clear-drawing', { roomId });
+                socket.emit('clear-drawing', { roomId: 'TRADING2025' });
             });
 
             let lastX = 0;
@@ -1086,7 +1081,7 @@
                 const y = e.clientY - rect.top;
 
                 drawLine(lastX, lastY, x, y, currentColor);
-                socket.emit('draw-line', { roomId, fromX: lastX, fromY: lastY, toX: x, toY: y, color: currentColor });
+                socket.emit('draw-line', { roomId: 'TRADING2025', fromX: lastX, fromY: lastY, toX: x, toY: y, color: currentColor });
 
                 lastX = x;
                 lastY = y;
@@ -1123,7 +1118,6 @@
             const canvas = document.getElementById('drawingCanvas');
             const video = document.getElementById('sharedScreen');
             
-            // Ajustar canvas al tamaño real del video
             canvas.width = video.videoWidth || video.clientWidth;
             canvas.height = video.videoHeight || video.clientHeight;
         }
@@ -1148,7 +1142,7 @@
             const message = input.value.trim();
             
             if (message) {
-                socket.emit('chat-message', { roomId, userId: socket.id, userName, message });
+                socket.emit('chat-message', { roomId: 'TRADING2025', userId: socket.id, userName, message });
                 addChatMessage(userName, message, true);
                 input.value = '';
             }
@@ -1190,4 +1184,3 @@
     </script>
 </body>
 </html>
-
