@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET - Sala</title>
+    <title>Sala de Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -92,28 +92,33 @@
             width: 100%;
             height: 100%;
             display: none;
+            align-items: center;
+            justify-content: center;
         }
 
         .screen-wrapper.active {
-            display: block;
+            display: flex;
         }
 
         #sharedScreen {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
             object-fit: contain;
             border-radius: 12px;
             background: #000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
         #drawingCanvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             cursor: crosshair;
             pointer-events: none;
+            border-radius: 12px;
         }
 
         #drawingCanvas.active {
@@ -145,7 +150,7 @@
             justify-content: center;
             font-size: 18px;
             transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .draw-btn:hover {
@@ -155,10 +160,6 @@
         .draw-btn.pen {
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             color: #000;
-        }
-
-        .draw-btn.pen.active {
-            background: #00ff88;
         }
 
         .draw-btn.eraser {
@@ -338,70 +339,115 @@
             transform: scale(1.1);
         }
 
-        .chat-panel {
+        /* CHAT COMPACTO */
+        .chat-container {
             position: fixed;
-            right: -400px;
-            top: 60px;
-            bottom: 140px;
-            width: 400px;
-            background: rgba(10, 14, 39, 0.98);
+            right: 20px;
+            bottom: 160px;
+            width: 320px;
+            max-height: 450px;
+            background: rgba(10, 14, 39, 0.95);
             backdrop-filter: blur(20px);
-            border-left: 1px solid rgba(0, 255, 136, 0.2);
-            transition: right 0.3s;
-            z-index: 200;
-            display: flex;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 16px;
+            display: none;
             flex-direction: column;
+            z-index: 300;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
-        .chat-panel.active {
-            right: 0;
+        .chat-container.active {
+            display: flex;
         }
 
         .chat-header {
-            padding: 16px;
+            padding: 12px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .chat-header h3 {
-            font-size: 16px;
+            font-size: 14px;
             color: #00ff88;
+            font-weight: 600;
         }
 
         .chat-close {
             background: none;
             border: none;
             color: #8b92b8;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 68, 68, 0.2);
+            color: #fff;
         }
 
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
+            max-height: 320px;
         }
 
+        /* MENSAJES FLOTANTES SIN MARCO */
         .chat-message {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-message.own {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-message.other {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            align-self: flex-start;
         }
 
         .chat-message .sender {
-            color: #00ff88;
             font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 4px;
+            font-size: 11px;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+
+        .chat-message.own .sender {
+            color: #000;
+        }
+
+        .chat-message.other .sender {
+            color: #00ff88;
+        }
+
+        .chat-message .text {
+            line-height: 1.4;
         }
 
         .chat-input-container {
-            padding: 16px;
+            padding: 12px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             gap: 8px;
@@ -411,21 +457,34 @@
             flex: 1;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 10px 14px;
+            border-radius: 20px;
+            padding: 8px 14px;
             color: #fff;
-            font-size: 14px;
+            font-size: 13px;
             outline: none;
+        }
+
+        #chatInput:focus {
+            border-color: rgba(0, 255, 136, 0.5);
         }
 
         #sendChat {
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             color: #050816;
-            font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #sendChat:hover {
+            transform: scale(1.1);
         }
 
         .floating-emoji {
@@ -448,16 +507,16 @@
         }
 
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         ::-webkit-scrollbar-thumb {
             background: rgba(0, 255, 136, 0.3);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         @media (max-width: 900px) {
@@ -468,6 +527,11 @@
             .reactions-section {
                 display: none;
             }
+            .chat-container {
+                width: 280px;
+                right: 10px;
+                bottom: 140px;
+            }
         }
     </style>
 </head>
@@ -475,7 +539,7 @@
     <div class="room-container">
         <div class="top-bar">
             <div class="room-info">
-                <div class="room-name">OZYMEET · TRADING2025</div>
+                <div class="room-name">Sala de Trading</div>
                 <div class="user-badge" id="userBadge">Cargando...</div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -498,7 +562,7 @@
                     </button>
                     
                     <div class="color-palette" id="colorPalette">
-                        <div class="color-option" data-color="#FF0000" style="background: #FF0000;"></div>
+                        <div class="color-option selected" data-color="#FF0000" style="background: #FF0000;"></div>
                         <div class="color-option" data-color="#00FF00" style="background: #00FF00;"></div>
                         <div class="color-option" data-color="#0000FF" style="background: #0000FF;"></div>
                         <div class="color-option" data-color="#FFFF00" style="background: #FFFF00;"></div>
@@ -534,11 +598,11 @@
                     <i class="fas fa-microphone"></i>
                 </button>
                 
-                <button class="control-btn secondary" id="shareScreen" title="Compartir Pantalla + Lápiz">
+                <button class="control-btn secondary" id="shareScreen" title="Compartir Pantalla">
                     <i class="fas fa-desktop"></i>
                 </button>
                 
-                <button class="control-btn secondary" id="recordBtn" title="Grabar Reunión">
+                <button class="control-btn secondary" id="recordBtn" title="Grabar">
                     <i class="fas fa-circle"></i>
                 </button>
                 
@@ -573,9 +637,10 @@
         </div>
     </div>
 
-    <div class="chat-panel" id="chatPanel">
+    <!-- CHAT COMPACTO -->
+    <div class="chat-container" id="chatContainer">
         <div class="chat-header">
-            <h3>Chat</h3>
+            <h3><i class="fas fa-comment"></i> Chat</h3>
             <button class="chat-close" id="closeChat">
                 <i class="fas fa-times"></i>
             </button>
@@ -583,7 +648,9 @@
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-container">
             <input type="text" id="chatInput" placeholder="Mensaje...">
-            <button id="sendChat">Enviar</button>
+            <button id="sendChat">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
@@ -604,14 +671,13 @@
         let screenStream = null;
         let mediaRecorder = null;
         let recordedChunks = [];
-        let drawingEnabled = false;
         let currentColor = '#FF0000';
         let isDrawing = false;
         let drawingContext = null;
 
         const roomId = sessionData.roomId;
         const userName = sessionData.userName;
-        const userRole = sessionData.role || 'participant';
+        const userRole = sessionData.role || 'guest';
 
         const badge = document.getElementById('userBadge');
         if (userRole === 'admin') {
@@ -686,7 +752,7 @@
         });
 
         socket.on('chat-message', ({ userName, message }) => {
-            addChatMessage(userName, message);
+            addChatMessage(userName, message, false);
         });
 
         socket.on('reaction', ({ emoji }) => {
@@ -852,7 +918,7 @@
             });
 
             toggleChat.addEventListener('click', () => {
-                document.getElementById('chatPanel').classList.toggle('active');
+                document.getElementById('chatContainer').classList.toggle('active');
             });
 
             leaveRoom.addEventListener('click', () => {
@@ -881,12 +947,15 @@
                 const video = document.getElementById('sharedScreen');
                 video.srcObject = screenStream;
                 
-                document.getElementById('screenWrapper').classList.add('active');
-                document.getElementById('noScreenMessage').style.display = 'none';
-                document.getElementById('drawingControls').classList.add('active');
-                document.getElementById('drawingCanvas').classList.add('active');
-                
-                resizeCanvas();
+                // Esperar a que el video cargue metadata
+                video.onloadedmetadata = () => {
+                    document.getElementById('screenWrapper').classList.add('active');
+                    document.getElementById('noScreenMessage').style.display = 'none';
+                    document.getElementById('drawingControls').classList.add('active');
+                    document.getElementById('drawingCanvas').classList.add('active');
+                    
+                    resizeCanvas();
+                };
 
                 screenStream.getVideoTracks()[0].onended = () => {
                     stopScreenShare();
@@ -939,7 +1008,7 @@
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `ozymeet-${Date.now()}.webm`;
+                    a.download = `trading-${Date.now()}.webm`;
                     document.body.appendChild(a);
                     a.click();
                     
@@ -954,7 +1023,7 @@
                 
             } catch (error) {
                 console.error('Error al grabar:', error);
-                alert('No se pudo iniciar la grabación: ' + error.message);
+                alert('No se pudo iniciar la grabación');
             }
         }
 
@@ -969,7 +1038,6 @@
             const canvas = document.getElementById('drawingCanvas');
             drawingContext = canvas.getContext('2d');
 
-            const penBtn = document.getElementById('penBtn');
             const colorBtn = document.getElementById('colorBtn');
             const colorPalette = document.getElementById('colorPalette');
             const eraserBtn = document.getElementById('eraserBtn');
@@ -1053,16 +1121,12 @@
 
         function resizeCanvas() {
             const canvas = document.getElementById('drawingCanvas');
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
+            const video = document.getElementById('sharedScreen');
+            
+            // Ajustar canvas al tamaño real del video
+            canvas.width = video.videoWidth || video.clientWidth;
+            canvas.height = video.videoHeight || video.clientHeight;
         }
-
-        window.addEventListener('resize', () => {
-            if (screenStream) {
-                resizeCanvas();
-            }
-        });
 
         function initChat() {
             const chatInput = document.getElementById('chatInput');
@@ -1075,7 +1139,7 @@
             });
 
             closeChat.addEventListener('click', () => {
-                document.getElementById('chatPanel').classList.remove('active');
+                document.getElementById('chatContainer').classList.remove('active');
             });
         }
 
@@ -1085,15 +1149,15 @@
             
             if (message) {
                 socket.emit('chat-message', { roomId, userId: socket.id, userName, message });
-                addChatMessage('Tú', message);
+                addChatMessage(userName, message, true);
                 input.value = '';
             }
         }
 
-        function addChatMessage(sender, message) {
+        function addChatMessage(sender, message, isOwn) {
             const messages = document.getElementById('chatMessages');
             const div = document.createElement('div');
-            div.className = 'chat-message';
+            div.className = `chat-message ${isOwn ? 'own' : 'other'}`;
             div.innerHTML = `
                 <div class="sender">${sender}</div>
                 <div class="text">${message}</div>
