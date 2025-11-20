@@ -19,7 +19,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .background {
@@ -32,25 +31,6 @@
             z-index: 0;
         }
 
-        .grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: 1;
-            animation: gridMove 20s linear infinite;
-        }
-
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
         .container {
             position: relative;
             z-index: 10;
@@ -58,27 +38,23 @@
             width: 90%;
         }
 
-        .logo-container {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
         .logo {
             font-size: 56px;
             font-weight: 900;
-            letter-spacing: -1px;
+            text-align: center;
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             margin-bottom: 8px;
         }
 
         .tagline {
             font-size: 12px;
             color: #666;
+            text-align: center;
             letter-spacing: 2px;
             text-transform: uppercase;
+            margin-bottom: 40px;
         }
 
         .card {
@@ -143,20 +119,13 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 8px;
-        }
-
-        .btn-enter {
             background: #00ff88;
             color: #000;
         }
 
-        .btn-enter:hover {
+        .btn:hover {
             background: #00cc6a;
             transform: translateY(-1px);
-        }
-
-        .btn-enter:active {
-            transform: translateY(0);
         }
 
         .error-message {
@@ -172,13 +141,6 @@
 
         .error-message.show {
             display: block;
-            animation: shake 0.3s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
         }
 
         .info {
@@ -187,27 +149,14 @@
             font-size: 12px;
             color: #666;
         }
-
-        @media (max-width: 600px) {
-            .logo {
-                font-size: 44px;
-            }
-            
-            .card {
-                padding: 32px 24px;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="background"></div>
-    <div class="grid"></div>
 
     <div class="container">
-        <div class="logo-container">
-            <div class="logo">OZYMEET</div>
-            <div class="tagline">Professional Conference</div>
-        </div>
+        <div class="logo">OZYMEET</div>
+        <div class="tagline">Professional Conference</div>
 
         <div class="card">
             <h2>Acceso a la Sala</h2>
@@ -233,15 +182,12 @@
                 >
             </div>
 
-            <button class="btn btn-enter" onclick="enterRoom()">
-                ENTRAR
-            </button>
+            <button class="btn" onclick="enterRoom()">ENTRAR</button>
 
             <div class="error-message" id="errorMessage"></div>
 
             <div class="info">
-                Sala única permanente<br>
-                Código fijo administrado
+                Sala única permanente · Código fijo
             </div>
         </div>
     </div>
@@ -273,9 +219,7 @@
             try {
                 const response = await fetch('/authenticate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         roomId: ROOM_ID,
                         userName: name,
@@ -300,20 +244,16 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                showError('Error al conectar. Intenta de nuevo.');
+                showError('Error al conectar');
             }
         }
 
         document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                enterRoom();
-            }
+            if (e.key === 'Enter') enterRoom();
         });
 
         document.getElementById('nameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('passwordInput').focus();
-            }
+            if (e.key === 'Enter') document.getElementById('passwordInput').focus();
         });
     </script>
 </body>
