@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OZYMEET - Login</title>
+  <title>OZYMEET - Entrar</title>
   <style>
     * {
       margin: 0;
@@ -25,142 +25,105 @@
       background: white;
       border-radius: 20px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px;
+      padding: 50px 40px;
       width: 100%;
-      max-width: 900px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-    }
-
-    .login-header {
-      grid-column: 1 / -1;
+      max-width: 450px;
       text-align: center;
-      margin-bottom: 20px;
     }
 
     .login-header h1 {
       color: #667eea;
-      font-size: 2.5rem;
+      font-size: 3rem;
       margin-bottom: 10px;
     }
 
     .login-header p {
       color: #666;
-      font-size: 1rem;
-    }
-
-    .divider {
-      width: 2px;
-      background: linear-gradient(to bottom, transparent, #667eea, transparent);
-      margin: 0 -20px;
-    }
-
-    .login-section {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .login-section h2 {
-      color: #333;
-      margin-bottom: 20px;
-      text-align: center;
-      font-size: 1.5rem;
-    }
-
-    .admin-section h2 {
-      color: #667eea;
-    }
-
-    .guest-section h2 {
-      color: #764ba2;
+      font-size: 1.1rem;
+      margin-bottom: 40px;
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      text-align: left;
     }
 
     label {
       display: block;
       color: #555;
-      margin-bottom: 8px;
-      font-weight: 500;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 1rem;
     }
 
-    input, select {
+    input {
       width: 100%;
-      padding: 12px 15px;
+      padding: 15px 20px;
       border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 1rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
       transition: all 0.3s;
     }
 
-    input:focus, select:focus {
+    input:focus {
       outline: none;
       border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
 
     .btn {
       width: 100%;
-      padding: 14px;
+      padding: 16px;
       border: none;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: 600;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 700;
       cursor: pointer;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
       transition: all 0.3s;
       margin-top: 10px;
     }
 
-    .btn-admin {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
     }
 
-    .btn-admin:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-guest {
-      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-      color: white;
-    }
-
-    .btn-guest:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);
+    .btn:active {
+      transform: translateY(-1px);
     }
 
     .error-message {
       color: #e74c3c;
-      font-size: 0.9rem;
-      margin-top: 10px;
-      text-align: center;
+      font-size: 0.95rem;
+      margin-top: 15px;
       display: none;
     }
 
-    .info-text {
-      color: #888;
-      font-size: 0.85rem;
-      text-align: center;
-      margin-top: 15px;
+    .info-box {
+      background: #f8f9ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .info-box p {
+      color: #555;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0;
     }
 
     @media (max-width: 768px) {
       .login-container {
-        grid-template-columns: 1fr;
-        padding: 30px 20px;
-      }
-
-      .divider {
-        display: none;
+        padding: 40px 25px;
       }
 
       .login-header h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
       }
     }
   </style>
@@ -169,141 +132,76 @@
   <div class="login-container">
     <div class="login-header">
       <h1>🚀 OZYMEET</h1>
-      <p>Plataforma Profesional de Trading</p>
+      <p>Sala de Trading Profesional</p>
     </div>
 
-    <!-- SECCIÓN ADMINISTRADORES -->
-    <div class="login-section admin-section">
-      <h2>👑 Administradores</h2>
-      
-      <div class="form-group">
-        <label for="adminSelect">Seleccionar Admin:</label>
-        <select id="adminSelect">
-          <option value="">-- Selecciona tu nombre --</option>
-          <option value="Ozy">Ozy</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="adminPassword">Contraseña:</label>
-        <input type="password" id="adminPassword" placeholder="Ingresa tu contraseña">
-      </div>
-
-      <button class="btn btn-admin" onclick="loginAsAdmin()">
-        Entrar como Admin
-      </button>
-
-      <div class="error-message" id="adminError"></div>
-      
-      <p class="info-text">
-        ✨ Permisos: Grabar, Mutear, Hosting
-      </p>
+    <div class="form-group">
+      <label for="userName">Tu Nombre:</label>
+      <input 
+        type="text" 
+        id="userName" 
+        placeholder="Escribe tu nombre" 
+        autofocus
+        maxlength="30"
+      >
     </div>
 
-    <div class="divider"></div>
+    <button class="btn" onclick="joinRoom()">
+      Entrar a la Sala
+    </button>
 
-    <!-- SECCIÓN INVITADOS -->
-    <div class="login-section guest-section">
-      <h2>👥 Invitados</h2>
-      
-      <div class="form-group">
-        <label for="guestName">Tu Nombre:</label>
-        <input type="text" id="guestName" placeholder="Escribe tu nombre">
-      </div>
+    <div class="error-message" id="errorMessage"></div>
 
-      <button class="btn btn-guest" onclick="loginAsGuest()">
-        Entrar como Invitado
-      </button>
-
-      <div class="error-message" id="guestError"></div>
-      
-      <p class="info-text">
-        🎯 Acceso directo a la sala
+    <div class="info-box">
+      <p>
+        📌 <strong>Acceso libre:</strong> Solo ingresa tu nombre y entra directamente a la sala de trading.
       </p>
     </div>
   </div>
 
   <script>
-    // Credenciales de administradores hardcoded
-    const ADMIN_CREDENTIALS = {
-      'Ozy': '0909'
-    };
-
-    // Código de sala fijo
     const ROOM_CODE = 'TRADING2025';
 
-    function loginAsAdmin() {
-      const adminName = document.getElementById('adminSelect').value;
-      const password = document.getElementById('adminPassword').value;
-      const errorDiv = document.getElementById('adminError');
+    function joinRoom() {
+      const userName = document.getElementById('userName').value.trim();
+      const errorDiv = document.getElementById('errorMessage');
 
-      // Validaciones
-      if (!adminName) {
-        showError(errorDiv, 'Por favor selecciona tu nombre');
+      if (!userName) {
+        showError('Por favor ingresa tu nombre');
         return;
       }
 
-      if (!password) {
-        showError(errorDiv, 'Por favor ingresa tu contraseña');
+      if (userName.length < 2) {
+        showError('El nombre debe tener al menos 2 caracteres');
         return;
       }
 
-      // Verificar credenciales
-      if (ADMIN_CREDENTIALS[adminName] !== password) {
-        showError(errorDiv, 'Contraseña incorrecta');
-        return;
-      }
-
-      // Login exitoso
-      sessionStorage.setItem('userName', adminName);
-      sessionStorage.setItem('isAdmin', 'true');
+      // Guardar en sessionStorage
+      sessionStorage.setItem('userName', userName);
       sessionStorage.setItem('roomId', ROOM_CODE);
       
+      // Ir a sala
       window.location.href = '/room.html';
     }
 
-    function loginAsGuest() {
-      const guestName = document.getElementById('guestName').value.trim();
-      const errorDiv = document.getElementById('guestError');
-
-      // Validación
-      if (!guestName) {
-        showError(errorDiv, 'Por favor ingresa tu nombre');
-        return;
-      }
-
-      if (guestName.length < 2) {
-        showError(errorDiv, 'El nombre debe tener al menos 2 caracteres');
-        return;
-      }
-
-      // Login exitoso
-      sessionStorage.setItem('userName', guestName);
-      sessionStorage.setItem('isAdmin', 'false');
-      sessionStorage.setItem('roomId', ROOM_CODE);
-      
-      window.location.href = '/room.html';
-    }
-
-    function showError(element, message) {
-      element.textContent = message;
-      element.style.display = 'block';
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
       setTimeout(() => {
-        element.style.display = 'none';
+        errorDiv.style.display = 'none';
       }, 3000);
     }
 
-    // Limpiar session storage al cargar
+    // Enter para enviar
+    document.getElementById('userName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        joinRoom();
+      }
+    });
+
+    // Limpiar session storage
     sessionStorage.clear();
-
-    // Enter key handlers
-    document.getElementById('adminPassword').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') loginAsAdmin();
-    });
-
-    document.getElementById('guestName').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') loginAsGuest();
-    });
   </script>
 </body>
 </html>
