@@ -340,8 +340,8 @@
 
     /* HERRAMIENTAS DE DIBUJO */
     .drawing-tools {
-      position: absolute;
-      bottom: 100px;
+      position: fixed;
+      bottom: 90px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(22, 33, 62, 0.95);
@@ -351,7 +351,7 @@
       display: none;
       align-items: center;
       gap: 15px;
-      z-index: 100;
+      z-index: 200;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     }
 
@@ -399,7 +399,7 @@
       transform: scale(1.1);
     }
 
-    /* MENÚ MÓVIL */
+    /* BOTÓN MENÚ MÓVIL */
     .mobile-menu-btn {
       display: none;
       position: fixed;
@@ -408,25 +408,28 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
       border-radius: 50%;
-      width: 56px;
-      height: 56px;
-      font-size: 1.6rem;
+      width: 60px;
+      height: 60px;
+      font-size: 1.8rem;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
-      z-index: 999;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.7);
+      z-index: 500;
       color: white;
+      align-items: center;
+      justify-content: center;
     }
 
+    /* PANEL MÓVIL */
     .mobile-panel {
       position: fixed;
-      top: 60px;
+      top: 0;
       right: -100%;
       width: 90%;
       max-width: 380px;
-      height: calc(100vh - 140px);
+      height: 100vh;
       background: #16213e;
       transition: right 0.3s ease;
-      z-index: 998;
+      z-index: 1000;
       border-left: 2px solid #667eea;
       display: flex;
       flex-direction: column;
@@ -439,7 +442,7 @@
 
     .mobile-panel-header {
       background: #0f3460;
-      padding: 15px 20px;
+      padding: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -448,26 +451,26 @@
 
     .mobile-panel-header h3 {
       color: #667eea;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
     }
 
     .mobile-close-btn {
-      background: none;
-      border: none;
+      background: rgba(231, 76, 60, 0.2);
+      border: 2px solid #e74c3c;
       color: white;
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       cursor: pointer;
-      width: 35px;
-      height: 35px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
 
     .mobile-close-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: #e74c3c;
     }
 
     .mobile-content {
@@ -484,22 +487,36 @@
       color: #667eea;
       margin-bottom: 12px;
       font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .mobile-user-item {
       background: #0f3460;
-      padding: 10px 12px;
+      padding: 12px 15px;
       border-radius: 8px;
       margin-bottom: 8px;
       font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mobile-user-item::before {
+      content: '👤';
+      font-size: 1.2rem;
     }
 
     .mobile-chat-container {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 300px;
+      max-height: 400px;
       overflow-y: auto;
+      padding: 10px;
+      background: #0f3460;
+      border-radius: 12px;
     }
 
     .mobile-chat-input-container {
@@ -512,13 +529,12 @@
 
     #mobileChatInput {
       flex: 1;
-      padding: 10px 15px;
+      padding: 12px 18px;
       border: 2px solid #667eea;
-      border-radius: 20px;
+      border-radius: 25px;
       background: #16213e;
       color: white;
-      font-size: 0.95rem;
-      border: none;
+      font-size: 1rem;
       outline: none;
     }
 
@@ -526,14 +542,30 @@
       background: #667eea;
       border: none;
       color: white;
-      width: 40px;
-      height: 40px;
+      width: 45px;
+      height: 45px;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .mobile-send-btn:active {
+      transform: scale(0.95);
+      background: #764ba2;
+    }
+
+    .participant-count {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
 
     /* RESPONSIVE */
@@ -545,13 +577,11 @@
 
       .sidebar-users,
       .sidebar-chat {
-        display: none;
+        display: none !important;
       }
 
       .mobile-menu-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
       }
 
       .header h1 {
@@ -599,7 +629,7 @@
       }
 
       .screen-info {
-        top: 10px;
+        top: 70px;
         left: 10px;
         font-size: 0.8rem;
         padding: 8px 12px;
@@ -641,9 +671,16 @@
         height: 32px;
         font-size: 1rem;
       }
+
+      .mobile-menu-btn {
+        width: 56px;
+        height: 56px;
+        font-size: 1.6rem;
+        bottom: 90px;
+      }
     }
 
-    /* Scrollbar personalizado */
+    /* Scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
@@ -753,18 +790,22 @@
     </div>
   </div>
 
-  <!-- MENÚ MÓVIL -->
+  <!-- BOTÓN MENÚ MÓVIL -->
   <button class="mobile-menu-btn" onclick="toggleMobilePanel()">💬</button>
 
+  <!-- PANEL MÓVIL -->
   <div class="mobile-panel" id="mobilePanel">
     <div class="mobile-panel-header">
-      <h3>Chat y Participantes</h3>
+      <h3>💬 Chat y Participantes</h3>
       <button class="mobile-close-btn" onclick="toggleMobilePanel()">✕</button>
     </div>
     
     <div class="mobile-content">
       <div class="mobile-section">
-        <h4>👥 Participantes (<span id="participantCount">0</span>)</h4>
+        <h4>
+          👥 Participantes 
+          <span class="participant-count" id="participantCount">0</span>
+        </h4>
         <div id="mobileUsersList"></div>
       </div>
       
@@ -821,6 +862,8 @@
       initCanvas();
       initChat();
       initColorPicker();
+      
+      console.log('App inicializada - Modo:', window.innerWidth <= 1024 ? 'MÓVIL' : 'DESKTOP');
     });
 
     function initSocket() {
@@ -860,7 +903,6 @@
       });
 
       socket.on('signal', ({ signal, from }) => {
-        console.log('Señal recibida de:', from);
         if (peers[from]) {
           peers[from].signal(signal);
         }
@@ -879,22 +921,18 @@
       });
 
       socket.on('screen-share-started', ({ userId, userName: sharerName }) => {
-        console.log(`${sharerName} comenzó a compartir pantalla`);
         currentScreenSharer = sharerName;
         document.getElementById('sharingUser').textContent = sharerName;
         document.getElementById('screenInfo').classList.add('active');
       });
 
       socket.on('screen-share-stopped', ({ userId }) => {
-        console.log('Compartir pantalla detenido');
         currentScreenSharer = null;
         document.getElementById('screenInfo').classList.remove('active');
       });
     }
 
     function createPeerConnection(userId, initiator, remoteUserName) {
-      console.log(`Creando peer con ${remoteUserName}, initiator: ${initiator}`);
-
       const peer = new SimplePeer({
         initiator: initiator,
         stream: localStream,
@@ -908,7 +946,6 @@
       });
 
       peer.on('signal', (signal) => {
-        console.log(`Enviando señal a ${remoteUserName}`);
         socket.emit('signal', {
           to: userId,
           signal: signal,
@@ -917,7 +954,6 @@
       });
 
       peer.on('stream', (remoteStream) => {
-        console.log(`Stream recibido de ${remoteUserName}`);
         playRemoteAudio(remoteStream, userId);
         
         if (remoteStream.getVideoTracks().length > 0) {
@@ -930,7 +966,6 @@
       });
 
       peer.on('close', () => {
-        console.log(`Peer cerrado: ${remoteUserName}`);
         delete peers[userId];
       });
 
@@ -962,7 +997,6 @@
         document.body.appendChild(audio);
       }
       audio.srcObject = stream;
-      console.log(`Audio reproduciendo para ${userId}`);
     }
 
     function displaySharedScreen(stream, sharerName) {
@@ -1085,7 +1119,6 @@
 
         } catch (err) {
           console.error('Error al compartir pantalla:', err);
-          alert('No se pudo compartir la pantalla');
         }
       } else {
         stopScreenShare();
@@ -1351,7 +1384,6 @@
         btn.innerHTML = '⏹️ <span>Detener</span>';
       } catch (err) {
         console.error('Error al grabar:', err);
-        alert('No se pudo iniciar la grabación');
       }
     }
 
@@ -1430,7 +1462,7 @@
     document.addEventListener('click', (e) => {
       const picker = document.getElementById('emojiPicker');
       const btn = document.querySelector('.emoji-btn');
-      if (!picker.contains(e.target) && e.target !== btn) {
+      if (picker && !picker.contains(e.target) && e.target !== btn) {
         picker.classList.remove('active');
       }
     });
@@ -1447,7 +1479,6 @@
       userDiv.className = 'user-item';
       userDiv.id = `user-${user.userId}`;
       userDiv.textContent = user.userName;
-
       usersList.appendChild(userDiv.cloneNode(true));
       
       const mobileUserDiv = document.createElement('div');
@@ -1455,19 +1486,14 @@
       mobileUserDiv.id = `mobile-user-${user.userId}`;
       mobileUserDiv.textContent = user.userName;
       mobileUsersList.appendChild(mobileUserDiv);
-      
-      console.log(`Usuario agregado: ${user.userName}`);
     }
 
     function removeUserFromList(userId) {
       const userDiv = document.getElementById(`user-${userId}`);
-      if (userDiv) {
-        userDiv.remove();
-      }
+      if (userDiv) userDiv.remove();
+      
       const mobileUserDiv = document.getElementById(`mobile-user-${userId}`);
-      if (mobileUserDiv) {
-        mobileUserDiv.remove();
-      }
+      if (mobileUserDiv) mobileUserDiv.remove();
     }
 
     function updateParticipantCount() {
@@ -1478,6 +1504,7 @@
     function toggleMobilePanel() {
       const panel = document.getElementById('mobilePanel');
       panel.classList.toggle('active');
+      console.log('Panel móvil toggled:', panel.classList.contains('active'));
     }
 
     function leaveMeeting() {
