@@ -12,80 +12,76 @@ const io = socketIo(server, {
   }
 });
 
-// Servir archivos estáticos desde carpeta public
+// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // SALA ÚNICA PERMANENTE
 const MAIN_ROOM = 'TRADING2025';
 
-// Almacenar usuarios conectados
-const users = new Map();
+// Tracking de usuarios - SIMPLIFICADO
+const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log('🔌 Nueva conexión:', socket.id);
+  console.log('🔌 Socket conectado:', socket.id);
 
-  // UNIRSE A LA SALA - FORZAR SALA ÚNICA PARA TODOS
-  socket.on('join-room', ({ userName, isAdmin }) => {
-    // CRÍTICO: Ignorar cualquier roomId del cliente
-    // TODOS van a la misma sala TRADING2025
-    const roomId = MAIN_ROOM;
+  // UNIRSE A LA SALA
+  socket.on('join-room', (data) => {
+    const { userName, isAdmin } = data;
     
-    // Unir socket a la sala
-    socket.join(roomId);
+    // FORZAR sala única
+    socket.join(MAIN_ROOM);
     
-    // Guardar información del usuario
-    users.set(socket.id, {
+    // Guardar usuario
+    connectedUsers.set(socket.id, {
+      socketId: socket.id,
       userName: userName,
-      isAdmin: isAdmin,
-      roomId: roomId
+      isAdmin: isAdmin
     });
 
-    console.log(`✅ ${userName} (${isAdmin ? 'ADMIN' : 'INVITADO'}) entró a sala: ${roomId}`);
+    console.log(`✅ ${userName} (${isAdmin ? 'ADMIN' : 'GUEST'}) → Sala: ${MAIN_ROOM}`);
+    console.log(`📊 Total usuarios conectados: ${connectedUsers.size}`);
 
-    // Obtener lista de usuarios YA conectados en la misma sala
+    // OBTENER TODOS los usuarios EXCEPTO el que acaba de entrar
     const existingUsers = [];
-    const roomSockets = io.sockets.adapter.rooms.get(roomId);
-    
-    if (roomSockets) {
-      roomSockets.forEach(socketId => {
-        if (socketId !== socket.id && users.has(socketId)) {
-          const user = users.get(socketId);
-          existingUsers.push({
-            userId: socketId,
-            userName: user.userName,
-            isAdmin: user.isAdmin
-          });
-        }
-      });
-    }
+    connectedUsers.forEach((user, socketId) => {
+      if (socketId !== socket.id) {
+        existingUsers.push({
+          userId: socketId,
+          userName: user.userName,
+          isAdmin: user.isAdmin
+        });
+      }
+    });
 
-    console.log(`📋 Usuarios existentes en sala: ${existingUsers.length}`);
+    console.log(`📋 Enviando ${existingUsers.length} usuarios existentes a ${userName}`);
 
-    // Enviar lista de usuarios existentes al nuevo usuario
+    // 1. Enviar lista de usuarios existentes AL NUEVO USUARIO
     socket.emit('existing-users', existingUsers);
 
-    // Notificar a TODOS los demás usuarios sobre el nuevo usuario
-    socket.to(roomId).emit('user-joined', {
+    // 2. Notificar a TODOS LOS DEMÁS sobre el nuevo usuario
+    socket.to(MAIN_ROOM).emit('user-joined', {
       userId: socket.id,
       userName: userName,
       isAdmin: isAdmin
     });
+
+    console.log(`📢 Notificado a sala sobre ${userName}`);
   });
 
-  // SEÑALIZACIÓN WEBRTC - Relay de señales entre peers
+  // SEÑALIZACIÓN WEBRTC
   socket.on('signal', ({ to, signal, from }) => {
-    console.log(`📡 Señal WebRTC: ${from} → ${to}`);
+    console.log(`📡 Relay señal: ${from} → ${to}`);
     io.to(to).emit('signal', {
       signal: signal,
       from: from
     });
   });
 
-  // MENSAJES DE CHAT
+  // CHAT
   socket.on('chat-message', (data) => {
-    const user = users.get(socket.id);
+    const user = connectedUsers.get(socket.id);
     if (user) {
-      console.log(`💬 Chat de ${user.userName}: ${data.message}`);
+      console.log(`💬 ${user.userName}: ${data.message}`);
       io.to(MAIN_ROOM).emit('chat-message', {
         userName: user.userName,
         message: data.message,
@@ -94,7 +90,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // DIBUJO EN PANTALLA COMPARTIDA
+  // DIBUJO
   socket.on('drawing', (data) => {
     socket.to(MAIN_ROOM).emit('drawing', data);
   });
@@ -103,9 +99,9 @@ io.on('connection', (socket) => {
     socket.to(MAIN_ROOM).emit('clear-canvas');
   });
 
-  // CONTROLES DE ADMINISTRADOR
+  // CONTROLES ADMIN
   socket.on('mute-all', () => {
-    const user = users.get(socket.id);
+    const user = connectedUsers.get(socket.id);
     if (user && user.isAdmin) {
       console.log(`🔇 ${user.userName} silenció a todos`);
       socket.to(MAIN_ROOM).emit('mute-all');
@@ -113,29 +109,37 @@ io.on('connection', (socket) => {
   });
 
   socket.on('end-meeting', () => {
-    const user = users.get(socket.id);
+    const user = connectedUsers.get(socket.id);
     if (user && user.isAdmin) {
-      console.log(`🚫 ${user.userName} finalizó la reunión`);
+      console.log(`🚫 ${user.userName} finalizó reunión`);
       io.to(MAIN_ROOM).emit('meeting-ended');
     }
   });
 
   // DESCONEXIÓN
   socket.on('disconnect', () => {
-    const user = users.get(socket.id);
+    const user = connectedUsers.get(socket.id);
     if (user) {
-      console.log(`❌ ${user.userName} se desconectó`);
+      console.log(`❌ ${user.userName} desconectado`);
+      console.log(`📊 Usuarios restantes: ${connectedUsers.size - 1}`);
+      
+      // Notificar a otros
       socket.to(MAIN_ROOM).emit('user-left', socket.id);
-      users.delete(socket.id);
+      
+      // Eliminar de tracking
+      connectedUsers.delete(socket.id);
     }
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Servidor OZYMEET corriendo en puerto ${PORT}`);
-  console.log(`📍 Sala única: ${MAIN_ROOM}`);
-  console.log(`🌐 http://localhost:${PORT}`);
+  console.log('');
+  console.log('🚀 ========================================');
+  console.log(`   OZYMEET SERVER RUNNING`);
+  console.log(`   Puerto: ${PORT}`);
+  console.log(`   Sala única: ${MAIN_ROOM}`);
+  console.log('🚀 ========================================');
+  console.log('');
 });
-
 
