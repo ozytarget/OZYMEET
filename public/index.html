@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET</title>
+    <title>OZYMEET - Login</title>
     <style>
         * {
             margin: 0;
@@ -54,50 +54,65 @@
         .container {
             position: relative;
             z-index: 10;
-            max-width: 480px;
+            max-width: 420px;
             width: 90%;
         }
 
         .logo-container {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 40px;
         }
 
         .logo {
-            font-size: 64px;
+            font-size: 56px;
             font-weight: 900;
-            letter-spacing: -2px;
+            letter-spacing: -1px;
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 8px;
-            text-transform: uppercase;
         }
 
         .tagline {
-            font-size: 13px;
+            font-size: 12px;
             color: #666;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
 
-        .main-card {
-            background: rgba(10, 10, 10, 0.6);
-            border: 1px solid rgba(0, 255, 136, 0.1);
+        .card {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(0, 255, 136, 0.15);
             border-radius: 16px;
             padding: 40px 32px;
             backdrop-filter: blur(20px);
         }
 
-        .input-container {
-            position: relative;
+        .card h2 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .input-group {
             margin-bottom: 16px;
         }
 
-        .input-container input {
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input {
             width: 100%;
-            padding: 20px;
+            padding: 16px;
             font-size: 15px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -105,24 +120,20 @@
             color: #fff;
             outline: none;
             transition: all 0.2s;
-            font-family: 'Courier New', monospace;
-            text-align: center;
-            letter-spacing: 2px;
         }
 
-        .input-container input:focus {
+        .input-group input:focus {
             background: rgba(255, 255, 255, 0.05);
             border-color: rgba(0, 255, 136, 0.3);
         }
 
-        .input-container input::placeholder {
+        .input-group input::placeholder {
             color: #555;
-            letter-spacing: 1px;
         }
 
         .btn {
             width: 100%;
-            padding: 20px;
+            padding: 16px;
             font-size: 15px;
             font-weight: 600;
             border: none;
@@ -131,83 +142,58 @@
             transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-top: 8px;
         }
 
-        .btn-join {
+        .btn-enter {
             background: #00ff88;
             color: #000;
-            margin-bottom: 12px;
         }
 
-        .btn-join:hover {
+        .btn-enter:hover {
             background: #00cc6a;
             transform: translateY(-1px);
         }
 
-        .btn-join:active {
+        .btn-enter:active {
             transform: translateY(0);
         }
 
-        .separator {
+        .error-message {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .info {
             text-align: center;
-            margin: 24px 0;
-            color: #444;
+            margin-top: 24px;
             font-size: 12px;
-            position: relative;
-        }
-
-        .separator::before,
-        .separator::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .separator::before {
-            left: 0;
-        }
-
-        .separator::after {
-            right: 0;
-        }
-
-        .btn-create {
-            background: transparent;
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
-        }
-
-        .btn-create:hover {
-            background: rgba(0, 255, 136, 0.05);
-            border-color: rgba(0, 255, 136, 0.4);
-        }
-
-        .glow {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.1); }
+            color: #666;
         }
 
         @media (max-width: 600px) {
             .logo {
-                font-size: 48px;
+                font-size: 44px;
             }
             
-            .main-card {
+            .card {
                 padding: 32px 24px;
             }
         }
@@ -216,69 +202,118 @@
 <body>
     <div class="background"></div>
     <div class="grid"></div>
-    <div class="glow"></div>
 
     <div class="container">
         <div class="logo-container">
             <div class="logo">OZYMEET</div>
-            <div class="tagline">Professional Trading Conference</div>
+            <div class="tagline">Professional Conference</div>
         </div>
 
-        <div class="main-card">
-            <div class="input-container">
+        <div class="card">
+            <h2>Acceso a la Sala</h2>
+            
+            <div class="input-group">
+                <label>Nombre</label>
                 <input 
                     type="text" 
-                    id="roomInput" 
-                    placeholder="ROOM CODE"
-                    maxlength="12"
+                    id="nameInput" 
+                    placeholder="Tu nombre"
+                    autocomplete="off"
+                    maxlength="30"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input 
+                    type="password" 
+                    id="passwordInput" 
+                    placeholder="Ingresa tu password"
                     autocomplete="off"
                 >
             </div>
 
-            <button class="btn btn-join" onclick="joinRoom()">
-                JOIN ROOM
+            <button class="btn btn-enter" onclick="enterRoom()">
+                ENTRAR
             </button>
 
-            <div class="separator">OR</div>
+            <div class="error-message" id="errorMessage"></div>
 
-            <button class="btn btn-create" onclick="createRoom()">
-                CREATE NEW ROOM
-            </button>
+            <div class="info">
+                Sala única permanente<br>
+                Código fijo administrado
+            </div>
         </div>
     </div>
 
     <script>
-        function generateRoomId() {
-            return Math.random().toString(36).substring(2, 10).toUpperCase();
+        const ROOM_ID = 'OZYMEET-MAIN';
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => errorDiv.classList.remove('show'), 3000);
         }
 
-        function joinRoom() {
-            const roomInput = document.getElementById('roomInput');
-            const roomId = roomInput.value.trim();
-            
-            if (roomId) {
-                window.location.href = `/room/${roomId}`;
-            } else {
-                roomInput.style.borderColor = 'rgba(255, 68, 68, 0.5)';
-                setTimeout(() => {
-                    roomInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                }, 500);
+        async function enterRoom() {
+            const name = document.getElementById('nameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (!name) {
+                showError('Por favor ingresa tu nombre');
+                return;
+            }
+
+            if (!password) {
+                showError('Por favor ingresa el password');
+                return;
+            }
+
+            try {
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        roomId: ROOM_ID,
+                        userName: name,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionStorage.setItem('ozymeet_auth', JSON.stringify({
+                        userName: name,
+                        password: password,
+                        role: data.role,
+                        roomId: ROOM_ID
+                    }));
+                    
+                    window.location.href = `/room/${ROOM_ID}`;
+                } else {
+                    showError(data.message || 'Password incorrecto');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al conectar. Intenta de nuevo.');
             }
         }
 
-        function createRoom() {
-            const roomId = generateRoomId();
-            window.location.href = `/room/${roomId}`;
-        }
-
-        document.getElementById('roomInput').addEventListener('keypress', (e) => {
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                joinRoom();
+                enterRoom();
             }
         });
 
-        document.getElementById('roomInput').addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('passwordInput').focus();
+            }
         });
     </script>
 </body>
