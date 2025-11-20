@@ -33,14 +33,22 @@
         .container {
             position: relative;
             z-index: 10;
-            max-width: 420px;
+            max-width: 900px;
             width: 90%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .logo-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .logo {
             font-size: 56px;
             font-weight: 900;
-            text-align: center;
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -50,17 +58,40 @@
         .tagline {
             font-size: 12px;
             color: #666;
-            text-align: center;
             letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 40px;
+        }
+
+        .room-code {
+            grid-column: 1 / -1;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .room-code-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .room-code-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 4px;
         }
 
         .card {
             background: rgba(10, 10, 10, 0.8);
             border: 1px solid rgba(0, 255, 136, 0.15);
             border-radius: 16px;
-            padding: 40px 32px;
+            padding: 32px 28px;
         }
 
         .card h2 {
@@ -69,6 +100,11 @@
             margin-bottom: 24px;
             font-weight: 600;
             text-align: center;
+        }
+
+        .card h2 i {
+            color: #00ff88;
+            margin-right: 8px;
         }
 
         .input-group {
@@ -84,9 +120,10 @@
             letter-spacing: 1px;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group select {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             font-size: 15px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -96,13 +133,23 @@
             transition: all 0.2s;
         }
 
-        .input-group input:focus {
+        .input-group select {
+            cursor: pointer;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
             background: rgba(255, 255, 255, 0.05);
             border-color: rgba(0, 255, 136, 0.3);
         }
 
         .input-group input::placeholder {
             color: #555;
+        }
+
+        .input-group select option {
+            background: #0a0e27;
+            color: #fff;
         }
 
         .btn {
@@ -115,63 +162,55 @@
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 8px;
-            background: #00ff88;
-            color: #000;
             transition: all 0.2s;
+            margin-top: 8px;
         }
 
-        .btn:hover {
+        .btn-admin {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+        }
+
+        .btn-admin:hover {
             background: #00cc6a;
             transform: translateY(-1px);
         }
 
-        .error-message {
-            background: rgba(255, 68, 68, 0.1);
-            border: 1px solid rgba(255, 68, 68, 0.3);
-            color: #ff4444;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 16px;
-            display: none;
-            text-align: center;
+        .btn-guest {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .error-message.show {
-            display: block;
+        .btn-guest:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
         }
 
         .info {
             text-align: center;
-            margin-top: 24px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .room-code {
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .room-code-label {
+            margin-top: 16px;
             font-size: 11px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
+            color: #666;
+            line-height: 1.5;
         }
 
-        .room-code-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #00ff88;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 3px;
+        .divider {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #444;
+            font-size: 12px;
+            margin: 8px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 44px;
+            }
         }
     </style>
 </head>
@@ -179,86 +218,138 @@
     <div class="background"></div>
 
     <div class="container">
-        <div class="logo">OZYMEET</div>
-        <div class="tagline">Professional Trading Conference</div>
+        <div class="logo-section">
+            <div class="logo">OZYMEET</div>
+            <div class="tagline">Professional Trading Conference</div>
+        </div>
 
+        <div class="room-code">
+            <div class="room-code-label">Código de Sala</div>
+            <div class="room-code-value">TRADING2025</div>
+        </div>
+
+        <!-- OPCIÓN 1: ADMINISTRADORES -->
         <div class="card">
-            <div class="room-code">
-                <div class="room-code-label">Código de Sala</div>
-                <div class="room-code-value">TRADING2025</div>
+            <h2><i class="fas fa-shield-alt"></i> Administradores</h2>
+            
+            <div class="input-group">
+                <label>Selecciona tu nombre</label>
+                <select id="adminSelect">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="Ozy">Ozy</option>
+                    <!-- Aquí se agregarán más admins a futuro -->
+                </select>
             </div>
 
-            <h2>Acceso</h2>
+            <div class="input-group">
+                <label>Password</label>
+                <input 
+                    type="password" 
+                    id="adminPassword" 
+                    placeholder="Ingresa tu password"
+                >
+            </div>
+
+            <button class="btn btn-admin" onclick="enterAsAdmin()">
+                ENTRAR COMO ADMIN
+            </button>
+
+            <div class="info">
+                Acceso con permisos especiales:<br>
+                Grabar · Mutear todos · Dar hosting
+            </div>
+        </div>
+
+        <!-- OPCIÓN 2: INVITADOS -->
+        <div class="card">
+            <h2><i class="fas fa-user"></i> Invitados</h2>
             
             <div class="input-group">
                 <label>Tu Nombre</label>
                 <input 
                     type="text" 
-                    id="nameInput" 
+                    id="guestName" 
                     placeholder="Ingresa tu nombre"
                     autocomplete="off"
                     maxlength="30"
                 >
             </div>
 
-            <button class="btn" onclick="enterRoom()">ENTRAR A LA SALA</button>
-
-            <div class="error-message" id="errorMessage"></div>
+            <button class="btn btn-guest" onclick="enterAsGuest()">
+                ENTRAR COMO INVITADO
+            </button>
 
             <div class="info">
-                Sala permanente · Código fijo
+                Acceso estándar sin password<br>
+                Participación normal en la sala
             </div>
         </div>
     </div>
 
     <script>
         const ROOM_CODE = 'TRADING2025';
-        const ADMIN_PASSWORD = '0909';
+        const ADMIN_PASSWORDS = {
+            'Ozy': '0909'
+            // Agregar más admins aquí: 'NombreAdmin': 'password'
+        };
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-            setTimeout(() => errorDiv.classList.remove('show'), 3000);
-        }
+        function enterAsAdmin() {
+            const adminName = document.getElementById('adminSelect').value;
+            const password = document.getElementById('adminPassword').value;
 
-        function enterRoom() {
-            const name = document.getElementById('nameInput').value.trim();
-
-            if (!name) {
-                showError('Por favor ingresa tu nombre');
+            if (!adminName) {
+                alert('Por favor selecciona tu nombre de administrador');
                 return;
             }
 
-            // Detectar si es admin (nombre específico o pregunta)
-            const isAdmin = name.toLowerCase() === 'admin' || name.toLowerCase() === 'ozy';
-            
-            if (isAdmin) {
-                const password = prompt('Password de administrador:');
-                if (password === ADMIN_PASSWORD) {
-                    sessionStorage.setItem('ozymeet_session', JSON.stringify({
-                        userName: name,
-                        role: 'admin',
-                        roomId: ROOM_CODE
-                    }));
-                    window.location.href = `/room/${ROOM_CODE}`;
-                } else {
-                    showError('Password de admin incorrecto');
-                }
-            } else {
-                sessionStorage.setItem('ozymeet_session', JSON.stringify({
-                    userName: name,
-                    role: 'participant',
-                    roomId: ROOM_CODE
-                }));
-                window.location.href = `/room/${ROOM_CODE}`;
+            if (!password) {
+                alert('Por favor ingresa tu password');
+                return;
             }
+
+            if (ADMIN_PASSWORDS[adminName] !== password) {
+                alert('Password incorrecto');
+                return;
+            }
+
+            sessionStorage.setItem('ozymeet_session', JSON.stringify({
+                userName: adminName,
+                role: 'admin',
+                roomId: ROOM_CODE
+            }));
+            
+            window.location.href = `/room/${ROOM_CODE}`;
         }
 
-        document.getElementById('nameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enterRoom();
+        function enterAsGuest() {
+            const name = document.getElementById('guestName').value.trim();
+
+            if (!name) {
+                alert('Por favor ingresa tu nombre');
+                return;
+            }
+
+            sessionStorage.setItem('ozymeet_session', JSON.stringify({
+                userName: name,
+                role: 'guest',
+                roomId: ROOM_CODE
+            }));
+            
+            window.location.href = `/room/${ROOM_CODE}`;
+        }
+
+        document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') enterAsAdmin();
+        });
+
+        document.getElementById('guestName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') enterAsGuest();
         });
     </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </body>
 </html>
+
+
 
