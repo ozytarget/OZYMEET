@@ -34,6 +34,7 @@
       align-items: center;
       padding: 0 30px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      z-index: 10;
     }
 
     .header h1 {
@@ -77,19 +78,32 @@
       overflow: hidden;
     }
 
+    #sharedScreenContainer {
+      width: 100%;
+      height: 100%;
+      display: none;
+      position: relative;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #sharedScreenContainer.active {
+      display: flex;
+    }
+
     #sharedScreen {
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
-      display: none;
     }
 
     #drawingCanvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       pointer-events: none;
       display: none;
     }
@@ -106,6 +120,22 @@
     .screen-placeholder h2 {
       font-size: 2rem;
       margin-bottom: 10px;
+    }
+
+    .screen-info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(22, 33, 62, 0.9);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      z-index: 5;
+      display: none;
+    }
+
+    .screen-info.active {
+      display: block;
     }
 
     .sidebar-chat {
@@ -205,6 +235,7 @@
       cursor: pointer;
       font-size: 1.2rem;
       transition: transform 0.2s;
+      flex-shrink: 0;
     }
 
     .emoji-btn:hover {
@@ -250,23 +281,25 @@
       justify-content: center;
       align-items: center;
       gap: 15px;
-      padding: 0 30px;
+      padding: 0 20px;
       border-top: 2px solid #0f3460;
+      flex-wrap: wrap;
     }
 
     .control-btn {
       background: #0f3460;
       border: 2px solid #667eea;
       color: white;
-      padding: 12px 24px;
+      padding: 12px 20px;
       border-radius: 25px;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
       transition: all 0.3s;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     .control-btn:hover {
@@ -336,15 +369,144 @@
       box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
     }
 
-    @media (max-width: 768px) {
+    /* RESPONSIVE - MÓVILES */
+    @media (max-width: 1024px) {
       .main-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 60px 1fr 100px;
+        grid-template-rows: 60px 1fr 70px;
       }
 
-      .sidebar-users,
+      .sidebar-users {
+        display: none;
+      }
+
       .sidebar-chat {
         display: none;
+      }
+
+      .header h1 {
+        font-size: 1.2rem;
+      }
+
+      .user-badge {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
+
+      .controls {
+        gap: 8px;
+        padding: 10px;
+        overflow-x: auto;
+        justify-content: flex-start;
+      }
+
+      .control-btn {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+        gap: 4px;
+      }
+
+      .color-picker {
+        left: 10px;
+        top: 70px;
+        padding: 10px;
+      }
+
+      .color-option {
+        width: 35px;
+        height: 35px;
+      }
+
+      .screen-info {
+        top: 10px;
+        left: 10px;
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 0 15px;
+      }
+
+      .header h1 {
+        font-size: 1rem;
+      }
+
+      .control-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+
+      .control-btn span {
+        display: none;
+      }
+
+      .main-content {
+        padding: 10px;
+      }
+    }
+
+    /* Menú móvil para chat y usuarios */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .mobile-menu-btn {
+      background: #667eea;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+    }
+
+    .mobile-panel {
+      position: fixed;
+      top: 60px;
+      right: -100%;
+      width: 85%;
+      max-width: 350px;
+      height: calc(100vh - 140px);
+      background: #16213e;
+      transition: right 0.3s;
+      z-index: 999;
+      border-left: 2px solid #667eea;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-panel.active {
+      right: 0;
+    }
+
+    .mobile-panel-header {
+      background: #0f3460;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .mobile-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 1024px) {
+      .mobile-menu {
+        display: block;
       }
     }
   </style>
@@ -366,8 +528,14 @@
         <h2>📊 OZYMEET</h2>
         <p>Esperando contenido compartido...</p>
       </div>
-      <video id="sharedScreen" autoplay playsinline></video>
-      <canvas id="drawingCanvas"></canvas>
+
+      <div id="sharedScreenContainer">
+        <video id="sharedScreen" autoplay playsinline></video>
+        <canvas id="drawingCanvas"></canvas>
+        <div class="screen-info" id="screenInfo">
+          🖥️ Compartiendo: <span id="sharingUser"></span>
+        </div>
+      </div>
       
       <div class="color-picker" id="colorPicker">
         <div class="color-option" style="background: #ff0000;" data-color="#ff0000"></div>
@@ -410,24 +578,45 @@
 
     <div class="controls">
       <button class="control-btn" id="micBtn" onclick="toggleMic()">
-        🎤 Micrófono
+        🎤 <span>Micrófono</span>
       </button>
       
       <button class="control-btn" id="shareBtn" onclick="toggleScreenShare()">
-        🖥️ Compartir Pantalla
+        🖥️ <span>Compartir</span>
       </button>
 
       <button class="control-btn" id="drawBtn" onclick="toggleDrawing()">
-        ✏️ Dibujar
+        ✏️ <span>Dibujar</span>
       </button>
 
       <button class="control-btn" id="recordBtn" onclick="toggleRecording()">
-        ⏺️ Grabar
+        ⏺️ <span>Grabar</span>
       </button>
 
       <button class="control-btn danger" onclick="leaveMeeting()">
-        🚪 Salir
+        🚪 <span>Salir</span>
       </button>
+    </div>
+  </div>
+
+  <!-- Menú móvil -->
+  <div class="mobile-menu">
+    <button class="mobile-menu-btn" onclick="toggleMobilePanel()">💬</button>
+  </div>
+
+  <div class="mobile-panel" id="mobilePanel">
+    <div class="mobile-panel-header">
+      <h3>Chat y Participantes</h3>
+      <button class="mobile-close-btn" onclick="toggleMobilePanel()">✕</button>
+    </div>
+    <div style="flex: 1; overflow-y: auto; padding: 15px;">
+      <h4 style="color: #667eea; margin-bottom: 10px;">👥 Participantes</h4>
+      <div id="mobileUsersList" style="margin-bottom: 20px;"></div>
+      <h4 style="color: #667eea; margin-bottom: 10px;">💬 Chat</h4>
+      <div id="mobileChatMessages" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+    <div style="padding: 15px; border-top: 2px solid #667eea;">
+      <input type="text" id="mobileChatInput" placeholder="Mensaje..." style="width: 100%; padding: 10px; border-radius: 20px; border: 2px solid #667eea; background: #0f3460; color: white;">
     </div>
   </div>
 
@@ -447,11 +636,13 @@
     let recordedChunks = [];
     let isRecording = false;
 
-    let isDrawing = false;
+    let isDrawingMode = false;
     let lastX = 0;
     let lastY = 0;
     let currentColor = '#ffff00';
     let canvas, ctx;
+
+    let currentScreenSharer = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       userName = sessionStorage.getItem('userName');
@@ -522,6 +713,19 @@
       socket.on('clear-canvas', () => {
         clearCanvas();
       });
+
+      socket.on('screen-share-started', ({ userId, userName: sharerName }) => {
+        console.log(`${sharerName} comenzó a compartir pantalla`);
+        currentScreenSharer = sharerName;
+        document.getElementById('sharingUser').textContent = sharerName;
+        document.getElementById('screenInfo').classList.add('active');
+      });
+
+      socket.on('screen-share-stopped', ({ userId }) => {
+        console.log('Compartir pantalla detenido');
+        currentScreenSharer = null;
+        document.getElementById('screenInfo').classList.remove('active');
+      });
     }
 
     function createPeerConnection(userId, initiator, remoteUserName) {
@@ -551,6 +755,10 @@
       peer.on('stream', (remoteStream) => {
         console.log(`Stream recibido de ${remoteUserName}`);
         playRemoteAudio(remoteStream, userId);
+        
+        if (remoteStream.getVideoTracks().length > 0) {
+          displaySharedScreen(remoteStream, remoteUserName);
+        }
       });
 
       peer.on('error', (err) => {
@@ -582,12 +790,38 @@
     }
 
     function playRemoteAudio(stream, userId) {
-      const audio = document.createElement('audio');
+      let audio = document.getElementById(`audio-${userId}`);
+      if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = `audio-${userId}`;
+        audio.autoplay = true;
+        document.body.appendChild(audio);
+      }
       audio.srcObject = stream;
-      audio.autoplay = true;
-      audio.id = `audio-${userId}`;
-      document.body.appendChild(audio);
       console.log(`Audio reproduciendo para ${userId}`);
+    }
+
+    function displaySharedScreen(stream, sharerName) {
+      const video = document.getElementById('sharedScreen');
+      const container = document.getElementById('sharedScreenContainer');
+      const placeholder = document.getElementById('placeholder');
+      const canvas = document.getElementById('drawingCanvas');
+
+      video.srcObject = stream;
+      container.classList.add('active');
+      placeholder.style.display = 'none';
+
+      video.onloadedmetadata = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.style.width = video.offsetWidth + 'px';
+        canvas.style.height = video.offsetHeight + 'px';
+        canvas.style.display = 'block';
+      };
+
+      currentScreenSharer = sharerName;
+      document.getElementById('sharingUser').textContent = sharerName;
+      document.getElementById('screenInfo').classList.add('active');
     }
 
     function toggleMic() {
@@ -596,13 +830,11 @@
       localStream.getAudioTracks()[0].enabled = isMicOn;
       const btn = document.getElementById('micBtn');
       btn.classList.toggle('active');
-      btn.innerHTML = isMicOn ? '🎤 Micrófono' : '🔇 Silenciado';
+      btn.innerHTML = isMicOn ? '🎤 <span>Micrófono</span>' : '🔇 <span>Silenciado</span>';
     }
 
     async function toggleScreenShare() {
       const btn = document.getElementById('shareBtn');
-      const video = document.getElementById('sharedScreen');
-      const placeholder = document.getElementById('placeholder');
 
       if (!screenStream) {
         try {
@@ -611,22 +843,49 @@
             audio: false
           });
 
+          const videoTrack = screenStream.getVideoTracks()[0];
+
+          Object.values(peers).forEach(peer => {
+            const sender = peer._pc.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(videoTrack);
+            } else {
+              peer.addTrack(videoTrack, screenStream);
+            }
+          });
+
+          socket.emit('screen-share-started', { userName });
+
+          const video = document.getElementById('sharedScreen');
+          const container = document.getElementById('sharedScreenContainer');
+          const placeholder = document.getElementById('placeholder');
+          const canvas = document.getElementById('drawingCanvas');
+
           video.srcObject = screenStream;
-          video.style.display = 'block';
+          container.classList.add('active');
           placeholder.style.display = 'none';
           btn.classList.add('active');
-          btn.innerHTML = '⏹️ Detener Compartir';
+          btn.innerHTML = '⏹️ <span>Detener</span>';
 
-          const canvas = document.getElementById('drawingCanvas');
-          canvas.width = video.videoWidth || 1920;
-          canvas.height = video.videoHeight || 1080;
-          canvas.style.display = 'block';
+          video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.style.width = video.offsetWidth + 'px';
+            canvas.style.height = video.offsetHeight + 'px';
+            canvas.style.display = 'block';
+          };
 
-          screenStream.getVideoTracks()[0].onended = () => {
+          currentScreenSharer = userName;
+          document.getElementById('sharingUser').textContent = userName;
+          document.getElementById('screenInfo').classList.add('active');
+
+          videoTrack.onended = () => {
             stopScreenShare();
           };
+
         } catch (err) {
           console.error('Error al compartir pantalla:', err);
+          alert('No se pudo compartir la pantalla');
         }
       } else {
         stopScreenShare();
@@ -637,20 +896,36 @@
       if (screenStream) {
         screenStream.getTracks().forEach(track => track.stop());
         screenStream = null;
+
+        Object.values(peers).forEach(peer => {
+          const sender = peer._pc.getSenders().find(s => s.track && s.track.kind === 'video');
+          if (sender) {
+            peer.removeTrack(sender.track, peer.streams[0]);
+          }
+        });
+
+        socket.emit('screen-share-stopped', { userName });
       }
-      const video = document.getElementById('sharedScreen');
-      const placeholder = document.getElementById('placeholder');
-      const btn = document.getElementById('shareBtn');
-      const canvas = document.getElementById('drawingCanvas');
 
-      video.style.display = 'none';
-      video.srcObject = null;
-      placeholder.style.display = 'block';
-      btn.classList.remove('active');
-      btn.innerHTML = '🖥️ Compartir Pantalla';
-      canvas.style.display = 'none';
+      if (currentScreenSharer === userName) {
+        const video = document.getElementById('sharedScreen');
+        const container = document.getElementById('sharedScreenContainer');
+        const placeholder = document.getElementById('placeholder');
+        const btn = document.getElementById('shareBtn');
+        const canvas = document.getElementById('drawingCanvas');
 
-      if (isDrawing) toggleDrawing();
+        video.srcObject = null;
+        container.classList.remove('active');
+        placeholder.style.display = 'block';
+        btn.classList.remove('active');
+        btn.innerHTML = '🖥️ <span>Compartir</span>';
+        canvas.style.display = 'none';
+        document.getElementById('screenInfo').classList.remove('active');
+
+        if (isDrawingMode) toggleDrawing();
+
+        currentScreenSharer = null;
+      }
     }
 
     function initCanvas() {
@@ -661,35 +936,76 @@
       canvas.addEventListener('mousemove', draw);
       canvas.addEventListener('mouseup', stopDrawing);
       canvas.addEventListener('mouseout', stopDrawing);
+
+      canvas.addEventListener('touchstart', handleTouchStart);
+      canvas.addEventListener('touchmove', handleTouchMove);
+      canvas.addEventListener('touchend', stopDrawing);
+    }
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      lastX = touch.clientX - rect.left;
+      lastY = touch.clientY - rect.top;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+    }
+
+    function handleTouchMove(e) {
+      if (!isDrawingMode) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      socket.emit('drawing', {
+        x0: lastX,
+        y0: lastY,
+        x1: x,
+        y1: y,
+        color: currentColor
+      });
+
+      lastX = x;
+      lastY = y;
     }
 
     function toggleDrawing() {
       const btn = document.getElementById('drawBtn');
       const canvas = document.getElementById('drawingCanvas');
       const colorPicker = document.getElementById('colorPicker');
+      const container = document.getElementById('sharedScreenContainer');
 
-      if (!screenStream) {
-        alert('Primero debes compartir pantalla');
+      if (!container.classList.contains('active')) {
+        alert('Primero debe haber una pantalla compartida');
         return;
       }
 
-      isDrawing = !isDrawing;
+      isDrawingMode = !isDrawingMode;
 
-      if (isDrawing) {
+      if (isDrawingMode) {
         canvas.classList.add('active');
         btn.classList.add('active');
-        btn.innerHTML = '✏️ Dibujo ON';
+        btn.innerHTML = '✏️ <span>Dibujo ON</span>';
         colorPicker.classList.add('active');
       } else {
         canvas.classList.remove('active');
         btn.classList.remove('active');
-        btn.innerHTML = '✏️ Dibujar';
+        btn.innerHTML = '✏️ <span>Dibujar</span>';
         colorPicker.classList.remove('active');
       }
     }
 
     function startDrawing(e) {
-      if (!isDrawing) return;
+      if (!isDrawingMode) return;
       const rect = canvas.getBoundingClientRect();
       lastX = e.clientX - rect.left;
       lastY = e.clientY - rect.top;
@@ -698,7 +1014,7 @@
     }
 
     function draw(e) {
-      if (!isDrawing) return;
+      if (!isDrawingMode) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -722,7 +1038,7 @@
     }
 
     function stopDrawing() {
-      if (!isDrawing) return;
+      if (!isDrawingMode) return;
       ctx.closePath();
     }
 
@@ -761,14 +1077,23 @@
     }
 
     async function startRecording() {
-      if (!screenStream) {
-        alert('Primero debes compartir pantalla');
+      const container = document.getElementById('sharedScreenContainer');
+      if (!container.classList.contains('active')) {
+        alert('Primero debe haber una pantalla compartida');
         return;
       }
 
       try {
+        const video = document.getElementById('sharedScreen');
+        const stream = video.srcObject;
+
+        if (!stream) {
+          alert('No hay pantalla compartida para grabar');
+          return;
+        }
+
         const audioTracks = localStream ? localStream.getAudioTracks() : [];
-        const videoTracks = screenStream.getVideoTracks();
+        const videoTracks = stream.getVideoTracks();
         const combinedStream = new MediaStream([...videoTracks, ...audioTracks]);
 
         mediaRecorder = new MediaRecorder(combinedStream, {
@@ -797,9 +1122,10 @@
 
         const btn = document.getElementById('recordBtn');
         btn.classList.add('recording');
-        btn.innerHTML = '⏹️ Detener Grabación';
+        btn.innerHTML = '⏹️ <span>Detener</span>';
       } catch (err) {
         console.error('Error al grabar:', err);
+        alert('No se pudo iniciar la grabación');
       }
     }
 
@@ -809,7 +1135,7 @@
         isRecording = false;
         const btn = document.getElementById('recordBtn');
         btn.classList.remove('recording');
-        btn.innerHTML = '⏺️ Grabar';
+        btn.innerHTML = '⏺️ <span>Grabar</span>';
       }
     }
 
@@ -820,10 +1146,17 @@
           sendChatMessage();
         }
       });
+
+      const mobileInput = document.getElementById('mobileChatInput');
+      mobileInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendChatMessage(mobileInput);
+        }
+      });
     }
 
-    function sendChatMessage() {
-      const input = document.getElementById('chatInput');
+    function sendChatMessage(inputElement = null) {
+      const input = inputElement || document.getElementById('chatInput');
       const message = input.value.trim();
       if (!message) return;
       socket.emit('chat-message', { message });
@@ -832,6 +1165,8 @@
 
     function addChatMessage(author, message, isOwn) {
       const messagesDiv = document.getElementById('chatMessages');
+      const mobileMessagesDiv = document.getElementById('mobileChatMessages');
+      
       const messageDiv = document.createElement('div');
       messageDiv.className = `chat-message ${isOwn ? 'own' : 'other'}`;
 
@@ -847,8 +1182,11 @@
       textSpan.textContent = message;
       messageDiv.appendChild(textSpan);
 
-      messagesDiv.appendChild(messageDiv);
+      messagesDiv.appendChild(messageDiv.cloneNode(true));
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      mobileMessagesDiv.appendChild(messageDiv);
+      mobileMessagesDiv.scrollTop = mobileMessagesDiv.scrollHeight;
     }
 
     function toggleEmojiPicker() {
@@ -873,6 +1211,7 @@
 
     function addUserToList(user) {
       const usersList = document.getElementById('usersList');
+      const mobileUsersList = document.getElementById('mobileUsersList');
       
       if (document.getElementById(`user-${user.userId}`)) {
         return;
@@ -883,7 +1222,9 @@
       userDiv.id = `user-${user.userId}`;
       userDiv.textContent = user.userName;
 
-      usersList.appendChild(userDiv);
+      usersList.appendChild(userDiv.cloneNode(true));
+      mobileUsersList.appendChild(userDiv);
+      
       console.log(`Usuario agregado: ${user.userName}`);
     }
 
@@ -892,6 +1233,15 @@
       if (userDiv) {
         userDiv.remove();
       }
+      const mobileUserDiv = document.querySelector(`#mobileUsersList .user-item[id="user-${userId}"]`);
+      if (mobileUserDiv) {
+        mobileUserDiv.remove();
+      }
+    }
+
+    function toggleMobilePanel() {
+      const panel = document.getElementById('mobilePanel');
+      panel.classList.toggle('active');
     }
 
     function leaveMeeting() {
@@ -920,3 +1270,4 @@
   </script>
 </body>
 </html>
+
