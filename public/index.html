@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET - Login</title>
+    <title>OZYMEET</title>
     <style>
         * {
             margin: 0;
@@ -28,7 +28,6 @@
             width: 100%;
             height: 100%;
             background: radial-gradient(circle at 50% 50%, #001a0d 0%, #000000 100%);
-            z-index: 0;
         }
 
         .container {
@@ -62,7 +61,6 @@
             border: 1px solid rgba(0, 255, 136, 0.15);
             border-radius: 16px;
             padding: 40px 32px;
-            backdrop-filter: blur(20px);
         }
 
         .card h2 {
@@ -115,12 +113,12 @@
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 8px;
             background: #00ff88;
             color: #000;
+            transition: all 0.2s;
         }
 
         .btn:hover {
@@ -137,6 +135,7 @@
             font-size: 13px;
             margin-top: 16px;
             display: none;
+            text-align: center;
         }
 
         .error-message.show {
@@ -149,6 +148,31 @@
             font-size: 12px;
             color: #666;
         }
+
+        .room-code {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .room-code-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .room-code-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 3px;
+        }
     </style>
 </head>
 <body>
@@ -156,44 +180,40 @@
 
     <div class="container">
         <div class="logo">OZYMEET</div>
-        <div class="tagline">Professional Conference</div>
+        <div class="tagline">Professional Trading Conference</div>
 
         <div class="card">
-            <h2>Acceso a la Sala</h2>
+            <div class="room-code">
+                <div class="room-code-label">Código de Sala</div>
+                <div class="room-code-value">TRADING2025</div>
+            </div>
+
+            <h2>Acceso</h2>
             
             <div class="input-group">
-                <label>Nombre</label>
+                <label>Tu Nombre</label>
                 <input 
                     type="text" 
                     id="nameInput" 
-                    placeholder="Tu nombre"
+                    placeholder="Ingresa tu nombre"
                     autocomplete="off"
                     maxlength="30"
                 >
             </div>
 
-            <div class="input-group">
-                <label>Password</label>
-                <input 
-                    type="password" 
-                    id="passwordInput" 
-                    placeholder="Ingresa tu password"
-                    autocomplete="off"
-                >
-            </div>
-
-            <button class="btn" onclick="enterRoom()">ENTRAR</button>
+            <button class="btn" onclick="enterRoom()">ENTRAR A LA SALA</button>
 
             <div class="error-message" id="errorMessage"></div>
 
             <div class="info">
-                Sala única permanente · Código fijo
+                Sala permanente · Código fijo
             </div>
         </div>
     </div>
 
     <script>
-        const ROOM_ID = 'OZYMEET-MAIN';
+        const ROOM_CODE = 'TRADING2025';
+        const ADMIN_PASSWORD = '0909';
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
@@ -202,58 +222,41 @@
             setTimeout(() => errorDiv.classList.remove('show'), 3000);
         }
 
-        async function enterRoom() {
+        function enterRoom() {
             const name = document.getElementById('nameInput').value.trim();
-            const password = document.getElementById('passwordInput').value;
 
             if (!name) {
                 showError('Por favor ingresa tu nombre');
                 return;
             }
 
-            if (!password) {
-                showError('Por favor ingresa el password');
-                return;
-            }
-
-            try {
-                const response = await fetch('/authenticate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        roomId: ROOM_ID,
+            // Detectar si es admin (nombre específico o pregunta)
+            const isAdmin = name.toLowerCase() === 'admin' || name.toLowerCase() === 'ozy';
+            
+            if (isAdmin) {
+                const password = prompt('Password de administrador:');
+                if (password === ADMIN_PASSWORD) {
+                    sessionStorage.setItem('ozymeet_session', JSON.stringify({
                         userName: name,
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    sessionStorage.setItem('ozymeet_auth', JSON.stringify({
-                        userName: name,
-                        password: password,
-                        role: data.role,
-                        roomId: ROOM_ID
+                        role: 'admin',
+                        roomId: ROOM_CODE
                     }));
-                    
-                    window.location.href = `/room/${ROOM_ID}`;
+                    window.location.href = `/room/${ROOM_CODE}`;
                 } else {
-                    showError(data.message || 'Password incorrecto');
+                    showError('Password de admin incorrecto');
                 }
-
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Error al conectar');
+            } else {
+                sessionStorage.setItem('ozymeet_session', JSON.stringify({
+                    userName: name,
+                    role: 'participant',
+                    roomId: ROOM_CODE
+                }));
+                window.location.href = `/room/${ROOM_CODE}`;
             }
         }
 
-        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enterRoom();
-        });
-
         document.getElementById('nameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('passwordInput').focus();
+            if (e.key === 'Enter') enterRoom();
         });
     </script>
 </body>
