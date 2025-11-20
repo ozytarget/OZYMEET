@@ -1,312 +1,309 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala de Trading</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OZYMEET - Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000;
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
 
-        .background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 50%, #001a0d 0%, #000000 100%);
-        }
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
 
-        .container {
-            position: relative;
-            z-index: 10;
-            max-width: 900px;
-            width: 90%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
+    .login-header {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-        .logo-section {
-            grid-column: 1 / -1;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    .login-header h1 {
+      color: #667eea;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
 
-        .logo {
-            font-size: 56px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-        }
+    .login-header p {
+      color: #666;
+      font-size: 1rem;
+    }
 
-        .tagline {
-            font-size: 12px;
-            color: #666;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
+    .divider {
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, #667eea, transparent);
+      margin: 0 -20px;
+    }
 
-        .card {
-            background: rgba(10, 10, 10, 0.8);
-            border: 1px solid rgba(0, 255, 136, 0.15);
-            border-radius: 16px;
-            padding: 32px 28px;
-        }
+    .login-section {
+      display: flex;
+      flex-direction: column;
+    }
 
-        .card h2 {
-            font-size: 20px;
-            color: #fff;
-            margin-bottom: 24px;
-            font-weight: 600;
-            text-align: center;
-        }
+    .login-section h2 {
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+    }
 
-        .card h2 i {
-            color: #00ff88;
-            margin-right: 8px;
-        }
+    .admin-section h2 {
+      color: #667eea;
+    }
 
-        .input-group {
-            margin-bottom: 16px;
-        }
+    .guest-section h2 {
+      color: #764ba2;
+    }
 
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    .form-group {
+      margin-bottom: 20px;
+    }
 
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 14px;
-            font-size: 15px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: #fff;
-            outline: none;
-            transition: all 0.2s;
-        }
+    label {
+      display: block;
+      color: #555;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
 
-        .input-group select {
-            cursor: pointer;
-        }
+    input, select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
 
-        .input-group input:focus,
-        .input-group select:focus {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(0, 255, 136, 0.3);
-        }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
 
-        .input-group input::placeholder {
-            color: #555;
-        }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
 
-        .input-group select option {
-            background: #0a0e27;
-            color: #fff;
-        }
+    .btn-admin {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
 
-        .btn {
-            width: 100%;
-            padding: 16px;
-            font-size: 15px;
-            font-weight: 600;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
+    .btn-admin:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
 
-        .btn-admin {
-            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-            color: #000;
-        }
+    .btn-guest {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+      color: white;
+    }
 
-        .btn-admin:hover {
-            background: #00cc6a;
-            transform: translateY(-1px);
-        }
+    .btn-guest:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);
+    }
 
-        .btn-guest {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+    }
 
-        .btn-guest:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
-        }
+    .info-text {
+      color: #888;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 15px;
+    }
 
-        .info {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 11px;
-            color: #666;
-            line-height: 1.5;
-        }
+    @media (max-width: 768px) {
+      .login-container {
+        grid-template-columns: 1fr;
+        padding: 30px 20px;
+      }
 
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
+      .divider {
+        display: none;
+      }
 
-            .logo {
-                font-size: 44px;
-            }
-        }
-    </style>
+      .login-header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="background"></div>
-
-    <div class="container">
-        <div class="logo-section">
-            <div class="logo">Sala de Trading</div>
-            <div class="tagline">Professional Conference Platform</div>
-        </div>
-
-        <!-- OPCIÓN 1: ADMINISTRADORES -->
-        <div class="card">
-            <h2><i class="fas fa-shield-alt"></i> Administradores</h2>
-            
-            <div class="input-group">
-                <label>Selecciona tu nombre</label>
-                <select id="adminSelect">
-                    <option value="">-- Seleccionar --</option>
-                    <option value="Ozy">Ozy</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label>Password</label>
-                <input 
-                    type="password" 
-                    id="adminPassword" 
-                    placeholder="Ingresa tu password"
-                >
-            </div>
-
-            <button class="btn btn-admin" onclick="enterAsAdmin()">
-                ENTRAR COMO ADMIN
-            </button>
-
-            <div class="info">
-                Acceso con permisos especiales:<br>
-                Grabar · Mutear todos · Dar hosting
-            </div>
-        </div>
-
-        <!-- OPCIÓN 2: INVITADOS -->
-        <div class="card">
-            <h2><i class="fas fa-user"></i> Invitados</h2>
-            
-            <div class="input-group">
-                <label>Tu Nombre</label>
-                <input 
-                    type="text" 
-                    id="guestName" 
-                    placeholder="Ingresa tu nombre"
-                    autocomplete="off"
-                    maxlength="30"
-                >
-            </div>
-
-            <button class="btn btn-guest" onclick="enterAsGuest()">
-                ENTRAR COMO INVITADO
-            </button>
-
-            <div class="info">
-                Acceso estándar sin password<br>
-                Participación normal en la sala
-            </div>
-        </div>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>🚀 OZYMEET</h1>
+      <p>Plataforma Profesional de Trading</p>
     </div>
 
-    <script>
-        const ROOM_CODE = 'TRADING2025';
-        const ADMIN_PASSWORDS = {
-            'Ozy': '0909'
-        };
+    <!-- SECCIÓN ADMINISTRADORES -->
+    <div class="login-section admin-section">
+      <h2>👑 Administradores</h2>
+      
+      <div class="form-group">
+        <label for="adminSelect">Seleccionar Admin:</label>
+        <select id="adminSelect">
+          <option value="">-- Selecciona tu nombre --</option>
+          <option value="Ozy">Ozy</option>
+        </select>
+      </div>
 
-        function enterAsAdmin() {
-            const adminName = document.getElementById('adminSelect').value;
-            const password = document.getElementById('adminPassword').value;
+      <div class="form-group">
+        <label for="adminPassword">Contraseña:</label>
+        <input type="password" id="adminPassword" placeholder="Ingresa tu contraseña">
+      </div>
 
-            if (!adminName) {
-                alert('Por favor selecciona tu nombre de administrador');
-                return;
-            }
+      <button class="btn btn-admin" onclick="loginAsAdmin()">
+        Entrar como Admin
+      </button>
 
-            if (!password) {
-                alert('Por favor ingresa tu password');
-                return;
-            }
+      <div class="error-message" id="adminError"></div>
+      
+      <p class="info-text">
+        ✨ Permisos: Grabar, Mutear, Hosting
+      </p>
+    </div>
 
-            if (ADMIN_PASSWORDS[adminName] !== password) {
-                alert('Password incorrecto');
-                return;
-            }
+    <div class="divider"></div>
 
-            sessionStorage.setItem('ozymeet_session', JSON.stringify({
-                userName: adminName,
-                role: 'admin',
-                roomId: ROOM_CODE
-            }));
-            
-            window.location.href = `/room/${ROOM_CODE}`;
-        }
+    <!-- SECCIÓN INVITADOS -->
+    <div class="login-section guest-section">
+      <h2>👥 Invitados</h2>
+      
+      <div class="form-group">
+        <label for="guestName">Tu Nombre:</label>
+        <input type="text" id="guestName" placeholder="Escribe tu nombre">
+      </div>
 
-        function enterAsGuest() {
-            const name = document.getElementById('guestName').value.trim();
+      <button class="btn btn-guest" onclick="loginAsGuest()">
+        Entrar como Invitado
+      </button>
 
-            if (!name) {
-                alert('Por favor ingresa tu nombre');
-                return;
-            }
+      <div class="error-message" id="guestError"></div>
+      
+      <p class="info-text">
+        🎯 Acceso directo a la sala
+      </p>
+    </div>
+  </div>
 
-            sessionStorage.setItem('ozymeet_session', JSON.stringify({
-                userName: name,
-                role: 'guest',
-                roomId: ROOM_CODE
-            }));
-            
-            window.location.href = `/room/${ROOM_CODE}`;
-        }
+  <script>
+    // Credenciales de administradores hardcoded
+    const ADMIN_CREDENTIALS = {
+      'Ozy': '0909'
+    };
 
-        document.getElementById('adminPassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enterAsAdmin();
-        });
+    // Código de sala fijo
+    const ROOM_CODE = 'TRADING2025';
 
-        document.getElementById('guestName').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enterAsGuest();
-        });
-    </script>
+    function loginAsAdmin() {
+      const adminName = document.getElementById('adminSelect').value;
+      const password = document.getElementById('adminPassword').value;
+      const errorDiv = document.getElementById('adminError');
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      // Validaciones
+      if (!adminName) {
+        showError(errorDiv, 'Por favor selecciona tu nombre');
+        return;
+      }
+
+      if (!password) {
+        showError(errorDiv, 'Por favor ingresa tu contraseña');
+        return;
+      }
+
+      // Verificar credenciales
+      if (ADMIN_CREDENTIALS[adminName] !== password) {
+        showError(errorDiv, 'Contraseña incorrecta');
+        return;
+      }
+
+      // Login exitoso
+      sessionStorage.setItem('userName', adminName);
+      sessionStorage.setItem('isAdmin', 'true');
+      sessionStorage.setItem('roomId', ROOM_CODE);
+      
+      window.location.href = '/room.html';
+    }
+
+    function loginAsGuest() {
+      const guestName = document.getElementById('guestName').value.trim();
+      const errorDiv = document.getElementById('guestError');
+
+      // Validación
+      if (!guestName) {
+        showError(errorDiv, 'Por favor ingresa tu nombre');
+        return;
+      }
+
+      if (guestName.length < 2) {
+        showError(errorDiv, 'El nombre debe tener al menos 2 caracteres');
+        return;
+      }
+
+      // Login exitoso
+      sessionStorage.setItem('userName', guestName);
+      sessionStorage.setItem('isAdmin', 'false');
+      sessionStorage.setItem('roomId', ROOM_CODE);
+      
+      window.location.href = '/room.html';
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => {
+        element.style.display = 'none';
+      }, 3000);
+    }
+
+    // Limpiar session storage al cargar
+    sessionStorage.clear();
+
+    // Enter key handlers
+    document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loginAsAdmin();
+    });
+
+    document.getElementById('guestName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loginAsGuest();
+    });
+  </script>
 </body>
 </html>
