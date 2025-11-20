@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET</title>
+    <title>Sala de Trading</title>
     <style>
         * {
             margin: 0;
@@ -60,31 +60,6 @@
             color: #666;
             letter-spacing: 2px;
             text-transform: uppercase;
-        }
-
-        .room-code {
-            grid-column: 1 / -1;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .room-code-label {
-            font-size: 11px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .room-code-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #00ff88;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 4px;
         }
 
         .card {
@@ -195,14 +170,6 @@
             line-height: 1.5;
         }
 
-        .divider {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: #444;
-            font-size: 12px;
-            margin: 8px 0;
-        }
-
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
@@ -219,13 +186,8 @@
 
     <div class="container">
         <div class="logo-section">
-            <div class="logo">OZYMEET</div>
-            <div class="tagline">Professional Trading Conference</div>
-        </div>
-
-        <div class="room-code">
-            <div class="room-code-label">Código de Sala</div>
-            <div class="room-code-value">TRADING2025</div>
+            <div class="logo">Sala de Trading</div>
+            <div class="tagline">Professional Conference Platform</div>
         </div>
 
         <!-- OPCIÓN 1: ADMINISTRADORES -->
@@ -237,7 +199,6 @@
                 <select id="adminSelect">
                     <option value="">-- Seleccionar --</option>
                     <option value="Ozy">Ozy</option>
-                    <!-- Aquí se agregarán más admins a futuro -->
                 </select>
             </div>
 
@@ -290,7 +251,6 @@
         const ROOM_CODE = 'TRADING2025';
         const ADMIN_PASSWORDS = {
             'Ozy': '0909'
-            // Agregar más admins aquí: 'NombreAdmin': 'password'
         };
 
         function enterAsAdmin() {
@@ -350,6 +310,3 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </body>
 </html>
-
-
-
