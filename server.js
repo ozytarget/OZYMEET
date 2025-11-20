@@ -1,6 +1,6 @@
 /**
  * ╔═══════════════════════════════════════════════════════════╗
- * ║                  🎯 OZYMEET SERVER PRO 🎯                 ║
+ * ║                  🎯 SALA DE TRADING 🎯                    ║
  * ║           Professional Video Conference Platform          ║
  * ║                      Version 3.0                          ║
  * ╚═══════════════════════════════════════════════════════════╝
@@ -37,20 +37,12 @@ const Logger = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// AUTHENTICATION SYSTEM
-// ═══════════════════════════════════════════════════════════
-
-const authorizedUsers = new Map([
-    ['0909', { name: 'Admin', role: 'admin', canCreateUsers: true }]
-]);
-
-// ═══════════════════════════════════════════════════════════
 // DATA STRUCTURES
 // ═══════════════════════════════════════════════════════════
 
+const MAIN_ROOM = 'TRADING2025'; // Sala única para TODOS
 const rooms = new Map();
 const users = new Map();
-const connectionAttempts = new Map();
 
 // ═══════════════════════════════════════════════════════════
 // HTTP ROUTES
@@ -64,7 +56,6 @@ app.get('/room/:roomId', (req, res) => {
     res.sendFile(__dirname + '/public/room.html');
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
@@ -78,115 +69,29 @@ app.get('/health', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// AUTHENTICATION ENDPOINTS
-// ═══════════════════════════════════════════════════════════
-
-app.post('/authenticate', (req, res) => {
-    const { roomId, userName, password } = req.body;
-    
-    Logger.info(`Login attempt: ${userName} with password: ${password}`);
-    
-    if (!password) {
-        return res.json({ success: false, message: 'Password requerido' });
-    }
-    
-    const user = authorizedUsers.get(password);
-    
-    if (user) {
-        Logger.success(`✅ Login exitoso: ${userName} (${user.role})`);
-        res.json({ 
-            success: true, 
-            role: user.role,
-            canCreateUsers: user.canCreateUsers 
-        });
-    } else {
-        Logger.warn(`❌ Login fallido: ${userName} - password incorrecto`);
-        res.json({ success: false, message: 'Password incorrecto' });
-    }
-});
-
-// Admin: Create new user
-app.post('/admin/create-user', (req, res) => {
-    const { adminPassword, newUserName, newUserPassword, newUserRole } = req.body;
-    
-    Logger.info(`Create user attempt by admin with password: ${adminPassword}`);
-    
-    const admin = authorizedUsers.get(adminPassword);
-    if (!admin || !admin.canCreateUsers) {
-        Logger.warn('Unauthorized create user attempt');
-        return res.json({ success: false, message: 'No autorizado' });
-    }
-    
-    if (!newUserName || !newUserPassword) {
-        return res.json({ success: false, message: 'Datos incompletos' });
-    }
-    
-    authorizedUsers.set(newUserPassword, {
-        name: newUserName,
-        role: newUserRole || 'participant',
-        canCreateUsers: false
-    });
-    
-    Logger.success(`✅ Usuario creado: ${newUserName} (${newUserRole}) - Password: ${newUserPassword}`);
-    res.json({ success: true, message: 'Usuario creado exitosamente' });
-});
-
-// Admin: List users
-app.post('/admin/list-users', (req, res) => {
-    const { adminPassword } = req.body;
-    
-    const admin = authorizedUsers.get(adminPassword);
-    if (!admin || !admin.canCreateUsers) {
-        return res.json({ success: false, message: 'No autorizado' });
-    }
-    
-    const userList = Array.from(authorizedUsers.entries()).map(([pwd, data]) => ({
-        password: pwd === '0909' ? '****' : pwd,
-        name: data.name,
-        role: data.role
-    }));
-    
-    res.json({ success: true, users: userList });
-});
-
-// ═══════════════════════════════════════════════════════════
 // SOCKET.IO CONNECTION HANDLER
 // ═══════════════════════════════════════════════════════════
 
 io.on('connection', (socket) => {
     Logger.success(`Client connected: ${socket.id}`);
     
-    const clientIP = socket.handshake.address;
-    const attempts = connectionAttempts.get(clientIP) || 0;
-    
-    if (attempts > 50) {
-        Logger.warn(`Rate limit exceeded for IP: ${clientIP}`);
-        socket.emit('error', { message: 'Too many connection attempts' });
-        socket.disconnect(true);
-        return;
-    }
-    
-    connectionAttempts.set(clientIP, attempts + 1);
-    setTimeout(() => connectionAttempts.delete(clientIP), 60000);
-    
     socket.on('join-room', ({ roomId, userName, password }) => {
         try {
-            if (!roomId || !userName || !password) {
-                socket.emit('error', { message: 'Datos incompletos' });
+            // FORZAR que TODOS entren a la MISMA sala
+            const actualRoomId = MAIN_ROOM;
+            
+            if (!userName) {
+                socket.emit('error', { message: 'Nombre requerido' });
                 return;
             }
             
-            const user = authorizedUsers.get(password);
-            if (!user) {
-                socket.emit('error', { message: 'No autorizado' });
-                return;
-            }
+            Logger.info(`${userName} intentando unirse a ${actualRoomId}`);
             
-            let room = rooms.get(roomId);
+            let room = rooms.get(actualRoomId);
             
             if (!room) {
                 room = {
-                    id: roomId,
+                    id: actualRoomId,
                     users: new Map(),
                     host: null,
                     createdAt: Date.now(),
@@ -197,7 +102,8 @@ io.on('connection', (socket) => {
                         allowChat: true
                     }
                 };
-                rooms.set(roomId, room);
+                rooms.set(actualRoomId, room);
+                Logger.room(`Sala creada: ${actualRoomId}`);
             }
             
             if (room.users.size >= room.settings.maxUsers) {
@@ -205,14 +111,18 @@ io.on('connection', (socket) => {
                 return;
             }
             
-            socket.join(roomId);
+            // Unir al socket a la sala
+            socket.join(actualRoomId);
             
+            // Determinar rol
             const isFirstUser = room.users.size === 0;
+            const isAdmin = password === '0909'; // Admin detectado por password
+            
             const userData = {
                 userId: socket.id,
                 userName: userName.trim(),
-                role: isFirstUser ? 'host' : user.role,
-                roomId: roomId,
+                role: isAdmin ? 'admin' : (isFirstUser ? 'host' : 'guest'),
+                roomId: actualRoomId,
                 handRaised: false,
                 isMuted: false,
                 isReady: false,
@@ -226,6 +136,7 @@ io.on('connection', (socket) => {
                 room.host = socket.id;
             }
             
+            // Obtener lista de usuarios existentes
             const existingUsers = Array.from(room.users.entries())
                 .filter(([id]) => id !== socket.id)
                 .map(([id, user]) => ({
@@ -237,13 +148,15 @@ io.on('connection', (socket) => {
                     isReady: user.isReady || false
                 }));
             
-            Logger.user(`${userName} (${userData.role}) joined room ${roomId} (${room.users.size}/${room.settings.maxUsers})`);
+            Logger.user(`${userName} (${userData.role}) unido a ${actualRoomId} - Total usuarios: ${room.users.size}`);
+            Logger.info(`Usuarios existentes en sala: ${existingUsers.map(u => u.userName).join(', ')}`);
             
+            // Notificar al usuario que se unió
             socket.emit('joined-room', {
                 success: true,
                 userData: userData,
                 roomData: {
-                    id: roomId,
+                    id: actualRoomId,
                     userCount: room.users.size,
                     host: room.host,
                     maxUsers: room.settings.maxUsers,
@@ -252,7 +165,8 @@ io.on('connection', (socket) => {
                 existingUsers: existingUsers
             });
             
-            socket.to(roomId).emit('user-connected', {
+            // Notificar a TODOS los demás
+            socket.to(actualRoomId).emit('user-connected', {
                 userId: userData.userId,
                 userName: userData.userName,
                 role: userData.role,
@@ -260,6 +174,8 @@ io.on('connection', (socket) => {
                 isMuted: false,
                 isReady: false
             });
+            
+            Logger.success(`✅ ${userName} sincronizado con ${existingUsers.length} usuarios`);
             
         } catch (error) {
             Logger.error('Error in join-room:', error.message);
@@ -269,10 +185,7 @@ io.on('connection', (socket) => {
     
     socket.on('signal', ({ to, signal, roomId }) => {
         try {
-            if (!to || !signal || !roomId) return;
-            
-            const room = rooms.get(roomId);
-            if (!room || !room.users.has(socket.id)) return;
+            if (!to || !signal) return;
             
             io.to(to).emit('signal', {
                 from: socket.id,
@@ -288,12 +201,9 @@ io.on('connection', (socket) => {
         try {
             if (!message || message.trim().length === 0) return;
             
-            const room = rooms.get(roomId);
-            if (!room) return;
-            
             const sanitizedMessage = message.trim().slice(0, 500);
             
-            socket.to(roomId).emit('chat-message', {
+            socket.to(MAIN_ROOM).emit('chat-message', {
                 userId: userId,
                 userName: userName,
                 message: sanitizedMessage,
@@ -307,7 +217,7 @@ io.on('connection', (socket) => {
     
     socket.on('reaction', ({ roomId, userId, userName, emoji }) => {
         try {
-            socket.to(roomId).emit('reaction', {
+            socket.to(MAIN_ROOM).emit('reaction', {
                 userId: userId,
                 userName: userName,
                 emoji: emoji,
@@ -321,7 +231,7 @@ io.on('connection', (socket) => {
     
     socket.on('draw-line', ({ roomId, fromX, fromY, toX, toY, color }) => {
         try {
-            socket.to(roomId).emit('draw-line', {
+            socket.to(MAIN_ROOM).emit('draw-line', {
                 fromX, fromY, toX, toY, color
             });
             
@@ -332,7 +242,7 @@ io.on('connection', (socket) => {
     
     socket.on('clear-drawing', ({ roomId }) => {
         try {
-            socket.to(roomId).emit('clear-drawing');
+            socket.to(MAIN_ROOM).emit('clear-drawing');
             
         } catch (error) {
             Logger.error('Error in clear-drawing:', error.message);
@@ -346,15 +256,14 @@ io.on('connection', (socket) => {
             const userData = users.get(socket.id);
             if (!userData) return;
             
-            const { roomId } = userData;
-            const room = rooms.get(roomId);
+            const room = rooms.get(MAIN_ROOM);
             
             if (room) {
                 room.users.delete(socket.id);
                 
-                socket.to(roomId).emit('user-disconnected', socket.id);
+                socket.to(MAIN_ROOM).emit('user-disconnected', socket.id);
                 
-                Logger.user(`${userData.userName} left room ${roomId} (${room.users.size} remaining)`);
+                Logger.user(`${userData.userName} salió de ${MAIN_ROOM} - Quedan ${room.users.size} usuarios`);
                 
                 if (room.host === socket.id && room.users.size > 0) {
                     const newHostId = Array.from(room.users.keys())[0];
@@ -363,22 +272,16 @@ io.on('connection', (socket) => {
                     room.host = newHostId;
                     newHostData.role = 'host';
                     
-                    io.to(roomId).emit('new-host', {
+                    io.to(MAIN_ROOM).emit('new-host', {
                         userId: newHostId,
                         userName: newHostData.userName
                     });
                     
-                    Logger.room(`New host: ${newHostData.userName} in room ${roomId}`);
+                    Logger.room(`Nuevo host: ${newHostData.userName}`);
                 }
                 
                 if (room.users.size === 0) {
-                    setTimeout(() => {
-                        const currentRoom = rooms.get(roomId);
-                        if (currentRoom && currentRoom.users.size === 0) {
-                            rooms.delete(roomId);
-                            Logger.room(`Room deleted: ${roomId} (empty)`);
-                        }
-                    }, 5 * 60 * 1000);
+                    Logger.room(`Sala ${MAIN_ROOM} vacía`);
                 }
             }
             
@@ -391,28 +294,6 @@ io.on('connection', (socket) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// PERIODIC CLEANUP
-// ═══════════════════════════════════════════════════════════
-
-setInterval(() => {
-    const now = Date.now();
-    const ONE_HOUR = 60 * 60 * 1000;
-    let cleanedCount = 0;
-    
-    rooms.forEach((room, roomId) => {
-        if (room.users.size === 0 && (now - room.createdAt) > ONE_HOUR) {
-            rooms.delete(roomId);
-            cleanedCount++;
-        }
-    });
-    
-    if (cleanedCount > 0) {
-        Logger.info(`Periodic cleanup: ${cleanedCount} empty rooms deleted`);
-    }
-    
-}, 60 * 60 * 1000);
-
-// ═══════════════════════════════════════════════════════════
 // SERVER STARTUP
 // ═══════════════════════════════════════════════════════════
 
@@ -422,9 +303,8 @@ http.listen(PORT, () => {
     console.log('\n');
     console.log('╔════════════════════════════════════════════════════╗');
     console.log('║                                                    ║');
-    console.log('║            🎯 OZYMEET SERVER PRO 🎯                ║');
+    console.log('║            🎯 SALA DE TRADING 🎯                   ║');
     console.log('║        Professional Video Conference Platform      ║');
-    console.log('║                   Version 3.0                      ║');
     console.log('║                                                    ║');
     console.log('╚════════════════════════════════════════════════════╝');
     console.log('');
@@ -432,18 +312,16 @@ http.listen(PORT, () => {
     console.log(`🌐 Local:  http://localhost:${PORT}`);
     console.log(`📊 Health: http://localhost:${PORT}/health`);
     console.log('');
-    console.log('🔐 AUTHENTICATION SYSTEM ACTIVE');
-    console.log(`   Master Password: 0909`);
-    console.log(`   Registered users: ${authorizedUsers.size}`);
+    console.log(`🏠 SALA ÚNICA: ${MAIN_ROOM}`);
+    console.log(`🔐 Admin Password: 0909`);
     console.log('');
     console.log('✅ Features Active:');
-    console.log('   • Single Room Authentication');
-    console.log('   • Admin User Management');
+    console.log('   • Single Room for ALL users');
     console.log('   • Real-time Audio (30 users)');
-    console.log('   • Screen Sharing');
+    console.log('   • Screen Sharing + Drawing');
     console.log('   • Live Chat');
-    console.log('   • Whiteboard');
     console.log('   • Emoji Reactions');
+    console.log('   • Admin Controls');
     console.log('');
     console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
     console.log('');
@@ -452,12 +330,10 @@ http.listen(PORT, () => {
 process.on('SIGTERM', () => {
     Logger.info('SIGTERM received. Shutting down gracefully...');
     
-    io.emit('server-shutdown', { message: 'Server is restarting. Please reconnect in a moment.' });
+    io.emit('server-shutdown', { message: 'Server is restarting' });
     
     http.close(() => {
         Logger.success('Server closed successfully');
         process.exit(0);
     });
 });
-
-
