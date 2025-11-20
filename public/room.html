@@ -12,20 +12,24 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #1a1a2e;
       color: white;
-      overflow: hidden;
-      position: fixed;
-      width: 100%;
-      height: 100%;
     }
 
     .main-container {
       display: grid;
       grid-template-columns: 250px 1fr 320px;
       grid-template-rows: 60px 1fr 80px;
+      width: 100vw;
       height: 100vh;
       gap: 0;
     }
@@ -121,6 +125,7 @@
     .screen-placeholder {
       text-align: center;
       color: #667eea;
+      padding: 20px;
     }
 
     .screen-placeholder h2 {
@@ -353,6 +358,8 @@
       gap: 15px;
       z-index: 200;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+      max-width: 90vw;
+      overflow-x: auto;
     }
 
     .drawing-tools.active {
@@ -366,6 +373,7 @@
       cursor: pointer;
       border: 3px solid transparent;
       transition: all 0.2s;
+      flex-shrink: 0;
     }
 
     .color-option:hover {
@@ -392,6 +400,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     .tool-btn:hover {
@@ -424,16 +433,13 @@
       position: fixed;
       top: 0;
       right: -100%;
-      width: 90%;
-      max-width: 380px;
+      width: 100vw;
       height: 100vh;
       background: #16213e;
       transition: right 0.3s ease;
       z-index: 1000;
-      border-left: 2px solid #667eea;
       display: flex;
       flex-direction: column;
-      box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .mobile-panel.active {
@@ -442,16 +448,17 @@
 
     .mobile-panel-header {
       background: #0f3460;
-      padding: 20px;
+      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #667eea;
+      min-height: 60px;
     }
 
     .mobile-panel-header h3 {
       color: #667eea;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
     }
 
     .mobile-close-btn {
@@ -460,23 +467,25 @@
       color: white;
       font-size: 1.5rem;
       cursor: pointer;
-      width: 40px;
-      height: 40px;
+      width: 45px;
+      height: 45px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
       transition: all 0.2s;
+      flex-shrink: 0;
     }
 
-    .mobile-close-btn:hover {
+    .mobile-close-btn:active {
       background: #e74c3c;
     }
 
     .mobile-content {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 15px;
+      padding-bottom: 80px;
     }
 
     .mobile-section {
@@ -512,7 +521,8 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 400px;
+      min-height: 300px;
+      max-height: 50vh;
       overflow-y: auto;
       padding: 10px;
       background: #0f3460;
@@ -520,11 +530,16 @@
     }
 
     .mobile-chat-input-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       padding: 15px 20px;
       background: #0f3460;
       border-top: 2px solid #667eea;
       display: flex;
       gap: 10px;
+      z-index: 10;
     }
 
     #mobileChatInput {
@@ -542,8 +557,8 @@
       background: #667eea;
       border: none;
       color: white;
-      width: 45px;
-      height: 45px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       cursor: pointer;
       font-size: 1.3rem;
@@ -589,60 +604,69 @@
       }
 
       .user-badge {
-        font-size: 0.8rem;
-        padding: 6px 12px;
+        font-size: 0.75rem;
+        padding: 5px 10px;
       }
 
       .controls {
-        gap: 8px;
-        padding: 10px;
+        gap: 6px;
+        padding: 8px;
         overflow-x: auto;
         justify-content: flex-start;
       }
 
       .control-btn {
-        padding: 10px 16px;
+        padding: 10px 14px;
         font-size: 0.85rem;
         gap: 4px;
         flex-shrink: 0;
       }
 
       .drawing-tools {
-        bottom: 85px;
-        padding: 12px 15px;
-        gap: 12px;
-        max-width: 90%;
-        overflow-x: auto;
+        bottom: 80px;
+        padding: 10px 15px;
+        gap: 10px;
       }
 
       .color-option {
-        width: 32px;
-        height: 32px;
-        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
       }
 
       .tool-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 1.1rem;
-        flex-shrink: 0;
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
       }
 
       .screen-info {
         top: 70px;
         left: 10px;
-        font-size: 0.8rem;
-        padding: 8px 12px;
+        font-size: 0.75rem;
+        padding: 6px 10px;
+      }
+
+      .screen-placeholder h2 {
+        font-size: 1.5rem;
+      }
+
+      .screen-placeholder p {
+        font-size: 0.9rem;
       }
     }
 
     @media (max-width: 480px) {
       .header {
-        padding: 0 15px;
+        padding: 0 10px;
       }
 
       .header h1 {
-        font-size: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .user-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
       }
 
       .control-btn span {
@@ -650,15 +674,15 @@
       }
 
       .control-btn {
-        padding: 10px 12px;
-        min-width: 45px;
+        padding: 10px;
+        min-width: 42px;
         justify-content: center;
       }
 
       .drawing-tools {
-        bottom: 80px;
-        padding: 10px 12px;
-        gap: 10px;
+        bottom: 75px;
+        padding: 8px 12px;
+        gap: 8px;
       }
 
       .color-option {
@@ -669,21 +693,30 @@
       .tool-btn {
         width: 32px;
         height: 32px;
-        font-size: 1rem;
+        font-size: 0.95rem;
       }
 
       .mobile-menu-btn {
-        width: 56px;
-        height: 56px;
+        width: 55px;
+        height: 55px;
         font-size: 1.6rem;
-        bottom: 90px;
+        bottom: 85px;
+        right: 15px;
+      }
+
+      .screen-placeholder h2 {
+        font-size: 1.2rem;
+      }
+
+      .screen-placeholder p {
+        font-size: 0.8rem;
       }
     }
 
     /* Scrollbar */
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
     }
 
     ::-webkit-scrollbar-track {
@@ -692,7 +725,7 @@
 
     ::-webkit-scrollbar-thumb {
       background: #667eea;
-      border-radius: 4px;
+      border-radius: 3px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
@@ -722,11 +755,10 @@
         <video id="sharedScreen" autoplay playsinline></video>
         <canvas id="drawingCanvas"></canvas>
         <div class="screen-info" id="screenInfo">
-          🖥️ Compartiendo: <span id="sharingUser"></span>
+          🖥️ <span id="sharingUser"></span>
         </div>
       </div>
       
-      <!-- HERRAMIENTAS DE DIBUJO -->
       <div class="drawing-tools" id="drawingTools">
         <div class="color-option" style="background: #ff0000;" data-color="#ff0000"></div>
         <div class="color-option" style="background: #00ff00;" data-color="#00ff00"></div>
@@ -735,7 +767,7 @@
         <div class="color-option" style="background: #ff00ff;" data-color="#ff00ff"></div>
         <div class="color-option" style="background: #00ffff;" data-color="#00ffff"></div>
         <div class="color-option" style="background: #ffffff;" data-color="#ffffff"></div>
-        <button class="tool-btn" onclick="clearCanvas()" title="Borrar todo">🗑️</button>
+        <button class="tool-btn" onclick="clearCanvas()" title="Borrar">🗑️</button>
       </div>
     </div>
 
@@ -790,10 +822,8 @@
     </div>
   </div>
 
-  <!-- BOTÓN MENÚ MÓVIL -->
   <button class="mobile-menu-btn" onclick="toggleMobilePanel()">💬</button>
 
-  <!-- PANEL MÓVIL -->
   <div class="mobile-panel" id="mobilePanel">
     <div class="mobile-panel-header">
       <h3>💬 Chat y Participantes</h3>
@@ -862,8 +892,6 @@
       initCanvas();
       initChat();
       initColorPicker();
-      
-      console.log('App inicializada - Modo:', window.innerWidth <= 1024 ? 'MÓVIL' : 'DESKTOP');
     });
 
     function initSocket() {
@@ -874,10 +902,7 @@
         userName: userName
       });
 
-      console.log(`Uniéndose a sala ${roomId} como ${userName}`);
-
       socket.on('existing-users', (users) => {
-        console.log('Usuarios existentes:', users);
         users.forEach(user => {
           addUserToList(user);
           createPeerConnection(user.userId, true, user.userName);
@@ -886,14 +911,12 @@
       });
 
       socket.on('user-joined', (user) => {
-        console.log('Usuario nuevo:', user);
         addUserToList(user);
         createPeerConnection(user.userId, false, user.userName);
         updateParticipantCount();
       });
 
       socket.on('user-left', (userId) => {
-        console.log('Usuario salió:', userId);
         removeUserFromList(userId);
         if (peers[userId]) {
           peers[userId].destroy();
@@ -982,7 +1005,6 @@
           },
           video: false
         });
-        console.log('Micrófono inicializado');
       } catch (err) {
         console.error('Error al acceder al micrófono:', err);
       }
@@ -1504,7 +1526,6 @@
     function toggleMobilePanel() {
       const panel = document.getElementById('mobilePanel');
       panel.classList.toggle('active');
-      console.log('Panel móvil toggled:', panel.classList.contains('active'));
     }
 
     function leaveMeeting() {
