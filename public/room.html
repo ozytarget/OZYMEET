@@ -26,7 +26,6 @@
       gap: 0;
     }
 
-    /* HEADER */
     .header {
       grid-column: 1 / -1;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -41,12 +40,6 @@
       font-size: 1.5rem;
     }
 
-    .header-info {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-
     .user-badge {
       background: rgba(255, 255, 255, 0.2);
       padding: 8px 16px;
@@ -54,7 +47,6 @@
       font-size: 0.9rem;
     }
 
-    /* SIDEBAR - USUARIOS */
     .sidebar-users {
       background: #16213e;
       padding: 20px;
@@ -73,27 +65,9 @@
       padding: 12px;
       border-radius: 8px;
       margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .user-item.admin {
-      border-left: 4px solid #ffd700;
-    }
-
-    .user-name {
       font-weight: 500;
     }
 
-    .user-badge-icon {
-      font-size: 0.8rem;
-      background: rgba(255, 215, 0, 0.2);
-      padding: 4px 8px;
-      border-radius: 12px;
-    }
-
-    /* ÁREA PRINCIPAL - VIDEO/PANTALLA */
     .main-content {
       background: #0f3460;
       position: relative;
@@ -134,7 +108,6 @@
       margin-bottom: 10px;
     }
 
-    /* CHAT SIDEBAR */
     .sidebar-chat {
       background: #16213e;
       display: flex;
@@ -270,7 +243,6 @@
       transform: scale(1.2);
     }
 
-    /* CONTROLES */
     .controls {
       grid-column: 1 / -1;
       background: #16213e;
@@ -327,16 +299,6 @@
       50% { opacity: 0.7; }
     }
 
-    .admin-controls {
-      display: none;
-    }
-
-    .admin-controls.visible {
-      display: flex;
-      gap: 15px;
-    }
-
-    /* COLOR PICKER PARA DIBUJO */
     .color-picker {
       position: absolute;
       top: 80px;
@@ -374,13 +336,6 @@
       box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
     }
 
-    /* RESPONSIVE */
-    @media (max-width: 1200px) {
-      .main-container {
-        grid-template-columns: 200px 1fr 280px;
-      }
-    }
-
     @media (max-width: 768px) {
       .main-container {
         grid-template-columns: 1fr;
@@ -392,51 +347,20 @@
         display: none;
       }
     }
-
-    /* AUDIO VISUALIZER (opcional) */
-    .audio-indicator {
-      position: absolute;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(22, 33, 62, 0.9);
-      padding: 15px 25px;
-      border-radius: 25px;
-      border: 2px solid #667eea;
-      display: none;
-    }
-
-    .audio-indicator.active {
-      display: block;
-      animation: fadeIn 0.3s;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
   </style>
 </head>
 <body>
   <div class="main-container">
-    <!-- HEADER -->
     <div class="header">
       <h1>🎯 Sala de Trading</h1>
-      <div class="header-info">
-        <div class="user-badge" id="userBadge">
-          <span id="userName">Usuario</span>
-          <span id="userRole"></span>
-        </div>
-      </div>
+      <div class="user-badge" id="userBadge"></div>
     </div>
 
-    <!-- SIDEBAR IZQUIERDO - USUARIOS -->
     <div class="sidebar-users">
       <h3>👥 Participantes</h3>
       <div id="usersList"></div>
     </div>
 
-    <!-- ÁREA PRINCIPAL -->
     <div class="main-content">
       <div class="screen-placeholder" id="placeholder">
         <h2>📊 OZYMEET</h2>
@@ -445,7 +369,6 @@
       <video id="sharedScreen" autoplay playsinline></video>
       <canvas id="drawingCanvas"></canvas>
       
-      <!-- Color Picker para Dibujo -->
       <div class="color-picker" id="colorPicker">
         <div class="color-option" style="background: #ff0000;" data-color="#ff0000"></div>
         <div class="color-option" style="background: #00ff00;" data-color="#00ff00"></div>
@@ -455,14 +378,8 @@
         <div class="color-option" style="background: #00ffff;" data-color="#00ffff"></div>
         <div class="color-option" style="background: #ffffff;" data-color="#ffffff"></div>
       </div>
-
-      <!-- Indicador de Audio -->
-      <div class="audio-indicator" id="audioIndicator">
-        🎤 Audio activo
-      </div>
     </div>
 
-    <!-- SIDEBAR DERECHO - CHAT -->
     <div class="sidebar-chat">
       <div class="chat-header">💬 Chat</div>
       <div class="chat-messages" id="chatMessages"></div>
@@ -471,7 +388,6 @@
         <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
       </div>
       
-      <!-- Emoji Picker -->
       <div class="emoji-picker" id="emojiPicker">
         <span class="emoji-item" onclick="insertEmoji('😊')">😊</span>
         <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
@@ -492,7 +408,6 @@
       </div>
     </div>
 
-    <!-- CONTROLES -->
     <div class="controls">
       <button class="control-btn" id="micBtn" onclick="toggleMic()">
         🎤 Micrófono
@@ -510,79 +425,45 @@
         ⏺️ Grabar
       </button>
 
-      <!-- CONTROLES DE ADMIN -->
-      <div class="admin-controls" id="adminControls">
-        <button class="control-btn" onclick="muteAll()">
-          🔇 Silenciar Todos
-        </button>
-        
-        <button class="control-btn danger" onclick="endMeeting()">
-          🚫 Finalizar Reunión
-        </button>
-      </div>
-
       <button class="control-btn danger" onclick="leaveMeeting()">
         🚪 Salir
       </button>
     </div>
   </div>
 
-  <!-- Socket.IO y SimplePeer -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
 
   <script>
-    // ========================================
-    // VARIABLES GLOBALES
-    // ========================================
     let socket;
     let localStream = null;
     let screenStream = null;
     let peers = {};
     let userName = '';
-    let isAdmin = false;
-    const roomId = 'TRADING2025'; // SALA ÚNICA FORZADA
+    const roomId = 'TRADING2025';
 
-    // Audio
     let isMicOn = true;
-    let audioContext;
-    let audioAnalyser;
-
-    // Grabación
     let mediaRecorder = null;
     let recordedChunks = [];
     let isRecording = false;
 
-    // Dibujo
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
     let currentColor = '#ffff00';
     let canvas, ctx;
 
-    // ========================================
-    // INICIALIZACIÓN
-    // ========================================
     window.addEventListener('DOMContentLoaded', () => {
-      // Verificar autenticación
       userName = sessionStorage.getItem('userName');
-      isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 
       if (!userName) {
-        alert('No estás autenticado. Redirigiendo al login...');
+        alert('No estás autenticado');
         window.location.href = '/index.html';
         return;
       }
 
-      // Actualizar UI
-      document.getElementById('userName').textContent = userName;
-      document.getElementById('userRole').textContent = isAdmin ? '👑 Admin' : '👤 Invitado';
+      document.getElementById('userBadge').textContent = userName;
 
-      if (isAdmin) {
-        document.getElementById('adminControls').classList.add('visible');
-      }
-
-      // Inicializar componentes
       initSocket();
       initAudio();
       initCanvas();
@@ -590,40 +471,32 @@
       initColorPicker();
     });
 
-    // ========================================
-    // SOCKET.IO
-    // ========================================
     function initSocket() {
       socket = io();
 
-      // Unirse a la sala
       socket.emit('join-room', {
-        roomId: roomId, // CRÍTICO: Sala forzada
-        userName: userName,
-        isAdmin: isAdmin
+        roomId: roomId,
+        userName: userName
       });
 
-      console.log(`📍 Uniéndose a sala: ${roomId} como ${userName} (${isAdmin ? 'Admin' : 'Invitado'})`);
+      console.log(`Uniéndose a sala ${roomId} como ${userName}`);
 
-      // Usuarios existentes al unirse
       socket.on('existing-users', (users) => {
-        console.log('👥 Usuarios existentes:', users);
+        console.log('Usuarios existentes:', users);
         users.forEach(user => {
           addUserToList(user);
           createPeerConnection(user.userId, true, user.userName);
         });
       });
 
-      // Nuevo usuario se unió
       socket.on('user-joined', (user) => {
-        console.log('✅ Usuario nuevo:', user);
+        console.log('Usuario nuevo:', user);
         addUserToList(user);
         createPeerConnection(user.userId, false, user.userName);
       });
 
-      // Usuario se fue
       socket.on('user-left', (userId) => {
-        console.log('❌ Usuario salió:', userId);
+        console.log('Usuario salió:', userId);
         removeUserFromList(userId);
         if (peers[userId]) {
           peers[userId].destroy();
@@ -631,20 +504,17 @@
         }
       });
 
-      // Señalización WebRTC
       socket.on('signal', ({ signal, from }) => {
-        console.log('📡 Señal recibida de:', from);
+        console.log('Señal recibida de:', from);
         if (peers[from]) {
           peers[from].signal(signal);
         }
       });
 
-      // Chat
       socket.on('chat-message', (data) => {
         addChatMessage(data.userName, data.message, data.userName === userName);
       });
 
-      // Dibujo
       socket.on('drawing', (data) => {
         drawRemoteLine(data);
       });
@@ -652,25 +522,10 @@
       socket.on('clear-canvas', () => {
         clearCanvas();
       });
-
-      // Controles admin
-      socket.on('mute-all', () => {
-        if (!isAdmin) {
-          muteMic();
-        }
-      });
-
-      socket.on('meeting-ended', () => {
-        alert('La reunión ha finalizado por el administrador');
-        window.location.href = '/index.html';
-      });
     }
 
-    // ========================================
-    // WEBRTC - PEER CONNECTIONS
-    // ========================================
     function createPeerConnection(userId, initiator, remoteUserName) {
-      console.log(`🔗 Creando peer con ${remoteUserName} (${userId}), initiator: ${initiator}`);
+      console.log(`Creando peer con ${remoteUserName}, initiator: ${initiator}`);
 
       const peer = new SimplePeer({
         initiator: initiator,
@@ -685,7 +540,7 @@
       });
 
       peer.on('signal', (signal) => {
-        console.log(`📤 Enviando señal a ${remoteUserName}`);
+        console.log(`Enviando señal a ${remoteUserName}`);
         socket.emit('signal', {
           to: userId,
           signal: signal,
@@ -694,31 +549,22 @@
       });
 
       peer.on('stream', (remoteStream) => {
-        console.log(`🎧 Stream recibido de ${remoteUserName}`);
+        console.log(`Stream recibido de ${remoteUserName}`);
         playRemoteAudio(remoteStream, userId);
       });
 
       peer.on('error', (err) => {
-        console.error(`❌ Error con peer ${remoteUserName}:`, err);
-        setTimeout(() => {
-          if (peers[userId]) {
-            console.log(`🔄 Reintentando conexión con ${remoteUserName}...`);
-            createPeerConnection(userId, initiator, remoteUserName);
-          }
-        }, 2000);
+        console.error(`Error con peer ${remoteUserName}:`, err);
       });
 
       peer.on('close', () => {
-        console.log(`🔌 Peer cerrado: ${remoteUserName}`);
+        console.log(`Peer cerrado: ${remoteUserName}`);
         delete peers[userId];
       });
 
       peers[userId] = peer;
     }
 
-    // ========================================
-    // AUDIO
-    // ========================================
     async function initAudio() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
@@ -729,18 +575,9 @@
           },
           video: false
         });
-
-        console.log('🎤 Micrófono inicializado');
-
-        // Audio Context para visualización
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        audioAnalyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(localStream);
-        source.connect(audioAnalyser);
-
+        console.log('Micrófono inicializado');
       } catch (err) {
-        console.error('❌ Error al acceder al micrófono:', err);
-        alert('No se pudo acceder al micrófono. Verifica los permisos.');
+        console.error('Error al acceder al micrófono:', err);
       }
     }
 
@@ -750,36 +587,18 @@
       audio.autoplay = true;
       audio.id = `audio-${userId}`;
       document.body.appendChild(audio);
-      console.log(`🔊 Audio reproduciendo para usuario ${userId}`);
+      console.log(`Audio reproduciendo para ${userId}`);
     }
 
     function toggleMic() {
       if (!localStream) return;
-
       isMicOn = !isMicOn;
       localStream.getAudioTracks()[0].enabled = isMicOn;
-
       const btn = document.getElementById('micBtn');
-      if (isMicOn) {
-        btn.classList.remove('active');
-        btn.innerHTML = '🎤 Micrófono';
-      } else {
-        btn.classList.add('active');
-        btn.innerHTML = '🔇 Silenciado';
-      }
-
-      console.log(`🎤 Micrófono: ${isMicOn ? 'ON' : 'OFF'}`);
+      btn.classList.toggle('active');
+      btn.innerHTML = isMicOn ? '🎤 Micrófono' : '🔇 Silenciado';
     }
 
-    function muteMic() {
-      if (localStream && isMicOn) {
-        toggleMic();
-      }
-    }
-
-    // ========================================
-    // COMPARTIR PANTALLA
-    // ========================================
     async function toggleScreenShare() {
       const btn = document.getElementById('shareBtn');
       const video = document.getElementById('sharedScreen');
@@ -788,9 +607,7 @@
       if (!screenStream) {
         try {
           screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-              cursor: 'always'
-            },
+            video: { cursor: 'always' },
             audio: false
           });
 
@@ -800,7 +617,6 @@
           btn.classList.add('active');
           btn.innerHTML = '⏹️ Detener Compartir';
 
-          // Ajustar canvas al tamaño del video
           const canvas = document.getElementById('drawingCanvas');
           canvas.width = video.videoWidth || 1920;
           canvas.height = video.videoHeight || 1080;
@@ -809,12 +625,8 @@
           screenStream.getVideoTracks()[0].onended = () => {
             stopScreenShare();
           };
-
-          console.log('🖥️ Pantalla compartida iniciada');
-
         } catch (err) {
-          console.error('❌ Error al compartir pantalla:', err);
-          alert('No se pudo compartir la pantalla');
+          console.error('Error al compartir pantalla:', err);
         }
       } else {
         stopScreenShare();
@@ -826,7 +638,6 @@
         screenStream.getTracks().forEach(track => track.stop());
         screenStream = null;
       }
-
       const video = document.getElementById('sharedScreen');
       const placeholder = document.getElementById('placeholder');
       const btn = document.getElementById('shareBtn');
@@ -839,17 +650,9 @@
       btn.innerHTML = '🖥️ Compartir Pantalla';
       canvas.style.display = 'none';
 
-      // Detener dibujo si está activo
-      if (isDrawing) {
-        toggleDrawing();
-      }
-
-      console.log('🖥️ Pantalla compartida detenida');
+      if (isDrawing) toggleDrawing();
     }
 
-    // ========================================
-    // DIBUJO EN CANVAS
-    // ========================================
     function initCanvas() {
       canvas = document.getElementById('drawingCanvas');
       ctx = canvas.getContext('2d');
@@ -858,33 +661,6 @@
       canvas.addEventListener('mousemove', draw);
       canvas.addEventListener('mouseup', stopDrawing);
       canvas.addEventListener('mouseout', stopDrawing);
-
-      // Touch events para móviles
-      canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousedown', {
-          clientX: touch.clientX,
-          clientY: touch.clientY
-        });
-        canvas.dispatchEvent(mouseEvent);
-      });
-
-      canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent('mousemove', {
-          clientX: touch.clientX,
-          clientY: touch.clientY
-        });
-        canvas.dispatchEvent(mouseEvent);
-      });
-
-      canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        const mouseEvent = new MouseEvent('mouseup', {});
-        canvas.dispatchEvent(mouseEvent);
-      });
     }
 
     function toggleDrawing() {
@@ -893,7 +669,7 @@
       const colorPicker = document.getElementById('colorPicker');
 
       if (!screenStream) {
-        alert('Primero debes compartir pantalla para dibujar');
+        alert('Primero debes compartir pantalla');
         return;
       }
 
@@ -910,24 +686,19 @@
         btn.innerHTML = '✏️ Dibujar';
         colorPicker.classList.remove('active');
       }
-
-      console.log(`✏️ Modo dibujo: ${isDrawing ? 'ON' : 'OFF'}`);
     }
 
     function startDrawing(e) {
       if (!isDrawing) return;
-
       const rect = canvas.getBoundingClientRect();
       lastX = e.clientX - rect.left;
       lastY = e.clientY - rect.top;
-
       ctx.beginPath();
       ctx.moveTo(lastX, lastY);
     }
 
     function draw(e) {
       if (!isDrawing) return;
-
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -938,7 +709,6 @@
       ctx.lineTo(x, y);
       ctx.stroke();
 
-      // Enviar dibujo a otros
       socket.emit('drawing', {
         x0: lastX,
         y0: lastY,
@@ -978,14 +748,10 @@
           colorOptions.forEach(opt => opt.classList.remove('selected'));
           option.classList.add('selected');
           currentColor = option.getAttribute('data-color');
-          console.log(`🎨 Color seleccionado: ${currentColor}`);
         });
       });
     }
 
-    // ========================================
-    // GRABACIÓN
-    // ========================================
     function toggleRecording() {
       if (!isRecording) {
         startRecording();
@@ -996,15 +762,13 @@
 
     async function startRecording() {
       if (!screenStream) {
-        alert('Primero debes compartir pantalla para grabar');
+        alert('Primero debes compartir pantalla');
         return;
       }
 
       try {
-        // Combinar audio y video
         const audioTracks = localStream ? localStream.getAudioTracks() : [];
         const videoTracks = screenStream.getVideoTracks();
-        
         const combinedStream = new MediaStream([...videoTracks, ...audioTracks]);
 
         mediaRecorder = new MediaRecorder(combinedStream, {
@@ -1026,7 +790,6 @@
           a.href = url;
           a.download = `OZYMEET-${Date.now()}.webm`;
           a.click();
-          console.log('💾 Grabación guardada');
         };
 
         mediaRecorder.start();
@@ -1035,12 +798,8 @@
         const btn = document.getElementById('recordBtn');
         btn.classList.add('recording');
         btn.innerHTML = '⏹️ Detener Grabación';
-
-        console.log('⏺️ Grabación iniciada');
-
       } catch (err) {
-        console.error('❌ Error al iniciar grabación:', err);
-        alert('No se pudo iniciar la grabación');
+        console.error('Error al grabar:', err);
       }
     }
 
@@ -1048,18 +807,12 @@
       if (mediaRecorder && isRecording) {
         mediaRecorder.stop();
         isRecording = false;
-
         const btn = document.getElementById('recordBtn');
         btn.classList.remove('recording');
         btn.innerHTML = '⏺️ Grabar';
-
-        console.log('⏹️ Grabación detenida');
       }
     }
 
-    // ========================================
-    // CHAT
-    // ========================================
     function initChat() {
       const input = document.getElementById('chatInput');
       input.addEventListener('keypress', (e) => {
@@ -1072,13 +825,9 @@
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const message = input.value.trim();
-
       if (!message) return;
-
       socket.emit('chat-message', { message });
       input.value = '';
-
-      console.log(`💬 Mensaje enviado: ${message}`);
     }
 
     function addChatMessage(author, message, isOwn) {
@@ -1114,7 +863,6 @@
       toggleEmojiPicker();
     }
 
-    // Cerrar emoji picker al hacer click fuera
     document.addEventListener('click', (e) => {
       const picker = document.getElementById('emojiPicker');
       const btn = document.querySelector('.emoji-btn');
@@ -1123,87 +871,43 @@
       }
     });
 
-    // ========================================
-    // LISTA DE USUARIOS
-    // ========================================
     function addUserToList(user) {
       const usersList = document.getElementById('usersList');
       
-      // Evitar duplicados
       if (document.getElementById(`user-${user.userId}`)) {
         return;
       }
 
       const userDiv = document.createElement('div');
-      userDiv.className = `user-item ${user.isAdmin ? 'admin' : ''}`;
+      userDiv.className = 'user-item';
       userDiv.id = `user-${user.userId}`;
-
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'user-name';
-      nameSpan.textContent = user.userName;
-
-      userDiv.appendChild(nameSpan);
-
-      if (user.isAdmin) {
-        const badge = document.createElement('span');
-        badge.className = 'user-badge-icon';
-        badge.textContent = '👑';
-        userDiv.appendChild(badge);
-      }
+      userDiv.textContent = user.userName;
 
       usersList.appendChild(userDiv);
-      console.log(`👤 Usuario agregado a lista: ${user.userName}`);
+      console.log(`Usuario agregado: ${user.userName}`);
     }
 
     function removeUserFromList(userId) {
       const userDiv = document.getElementById(`user-${userId}`);
       if (userDiv) {
         userDiv.remove();
-        console.log(`👤 Usuario removido de lista: ${userId}`);
-      }
-    }
-
-    // ========================================
-    // CONTROLES DE ADMIN
-    // ========================================
-    function muteAll() {
-      if (!isAdmin) return;
-      socket.emit('mute-all');
-      alert('Todos los participantes han sido silenciados');
-      console.log('🔇 Silenciar todos ejecutado');
-    }
-
-    function endMeeting() {
-      if (!isAdmin) return;
-      if (confirm('¿Estás seguro de finalizar la reunión para todos?')) {
-        socket.emit('end-meeting');
-        window.location.href = '/index.html';
       }
     }
 
     function leaveMeeting() {
-      if (confirm('¿Estás seguro de salir de la reunión?')) {
-        // Limpiar streams
+      if (confirm('¿Salir de la reunión?')) {
         if (localStream) {
           localStream.getTracks().forEach(track => track.stop());
         }
         if (screenStream) {
           screenStream.getTracks().forEach(track => track.stop());
         }
-
-        // Cerrar peers
         Object.values(peers).forEach(peer => peer.destroy());
-
-        // Desconectar socket
         socket.disconnect();
-
         window.location.href = '/index.html';
       }
     }
 
-    // ========================================
-    // LIMPIEZA AL CERRAR
-    // ========================================
     window.addEventListener('beforeunload', () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
