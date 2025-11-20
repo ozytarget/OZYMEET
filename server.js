@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════╗
  * ║                  🎯 OZYMEET SERVER PRO 🎯                 ║
  * ║           Professional Video Conference Platform          ║
- * ║                      Version 2.0                          ║
+ * ║                      Version 3.0                          ║
  * ╚═══════════════════════════════════════════════════════════╝
  */
 
@@ -37,12 +37,20 @@ const Logger = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// AUTHENTICATION SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+const authorizedUsers = new Map([
+    ['0909', { name: 'Admin', role: 'admin', canCreateUsers: true }]
+]);
+
+// ═══════════════════════════════════════════════════════════
 // DATA STRUCTURES
 // ═══════════════════════════════════════════════════════════
 
 const rooms = new Map();
 const users = new Map();
-const connectionAttempts = new Map(); // Track connection attempts for rate limiting
+const connectionAttempts = new Map();
 
 // ═══════════════════════════════════════════════════════════
 // HTTP ROUTES
@@ -56,7 +64,7 @@ app.get('/room/:roomId', (req, res) => {
     res.sendFile(__dirname + '/public/room.html');
 });
 
-// Health check endpoint for monitoring
+// Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
@@ -69,45 +77,76 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Create room endpoint with validation
-app.post('/create-room', (req, res) => {
-    try {
-        const roomId = generateRoomCode();
-        const { password } = req.body;
-        
-        // Validate password if provided
-        if (password && (password.length < 4 || password.length > 20)) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Password must be between 4-20 characters' 
-            });
-        }
-        
-        rooms.set(roomId, {
-            id: roomId,
-            password: password || null,
-            host: null,
-            users: new Map(),
-            createdAt: Date.now(),
-            settings: {
-                maxUsers: 30,
-                allowScreenShare: true,
-                allowRecording: true,
-                allowChat: true
-            },
-            metadata: {
-                version: '2.0',
-                totalJoins: 0
-            }
-        });
-        
-        Logger.room(`Room created: ${roomId} ${password ? '🔒' : '🔓'}`);
-        res.json({ success: true, roomId: roomId });
-        
-    } catch (error) {
-        Logger.error('Failed to create room:', error.message);
-        res.status(500).json({ success: false, error: 'Internal server error' });
+// ═══════════════════════════════════════════════════════════
+// AUTHENTICATION ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+app.post('/authenticate', (req, res) => {
+    const { roomId, userName, password } = req.body;
+    
+    Logger.info(`Login attempt: ${userName} with password: ${password}`);
+    
+    if (!password) {
+        return res.json({ success: false, message: 'Password requerido' });
     }
+    
+    const user = authorizedUsers.get(password);
+    
+    if (user) {
+        Logger.success(`✅ Login exitoso: ${userName} (${user.role})`);
+        res.json({ 
+            success: true, 
+            role: user.role,
+            canCreateUsers: user.canCreateUsers 
+        });
+    } else {
+        Logger.warn(`❌ Login fallido: ${userName} - password incorrecto`);
+        res.json({ success: false, message: 'Password incorrecto' });
+    }
+});
+
+// Admin: Create new user
+app.post('/admin/create-user', (req, res) => {
+    const { adminPassword, newUserName, newUserPassword, newUserRole } = req.body;
+    
+    Logger.info(`Create user attempt by admin with password: ${adminPassword}`);
+    
+    const admin = authorizedUsers.get(adminPassword);
+    if (!admin || !admin.canCreateUsers) {
+        Logger.warn('Unauthorized create user attempt');
+        return res.json({ success: false, message: 'No autorizado' });
+    }
+    
+    if (!newUserName || !newUserPassword) {
+        return res.json({ success: false, message: 'Datos incompletos' });
+    }
+    
+    authorizedUsers.set(newUserPassword, {
+        name: newUserName,
+        role: newUserRole || 'participant',
+        canCreateUsers: false
+    });
+    
+    Logger.success(`✅ Usuario creado: ${newUserName} (${newUserRole}) - Password: ${newUserPassword}`);
+    res.json({ success: true, message: 'Usuario creado exitosamente' });
+});
+
+// Admin: List users
+app.post('/admin/list-users', (req, res) => {
+    const { adminPassword } = req.body;
+    
+    const admin = authorizedUsers.get(adminPassword);
+    if (!admin || !admin.canCreateUsers) {
+        return res.json({ success: false, message: 'No autorizado' });
+    }
+    
+    const userList = Array.from(authorizedUsers.entries()).map(([pwd, data]) => ({
+        password: pwd === '0909' ? '****' : pwd,
+        name: data.name,
+        role: data.role
+    }));
+    
+    res.json({ success: true, users: userList });
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -117,89 +156,76 @@ app.post('/create-room', (req, res) => {
 io.on('connection', (socket) => {
     Logger.success(`Client connected: ${socket.id}`);
     
-    // Rate limiting check (basic implementation)
     const clientIP = socket.handshake.address;
     const attempts = connectionAttempts.get(clientIP) || 0;
     
     if (attempts > 50) {
         Logger.warn(`Rate limit exceeded for IP: ${clientIP}`);
-        socket.emit('error', { message: 'Too many connection attempts. Please try again later.' });
+        socket.emit('error', { message: 'Too many connection attempts' });
         socket.disconnect(true);
         return;
     }
     
     connectionAttempts.set(clientIP, attempts + 1);
-    setTimeout(() => connectionAttempts.delete(clientIP), 60000); // Reset after 1 minute
-    
-    // ═══════════════════════════════════════════════════════
-    // JOIN ROOM - CRITICAL FIX FOR USER ISOLATION
-    // ═══════════════════════════════════════════════════════
+    setTimeout(() => connectionAttempts.delete(clientIP), 60000);
     
     socket.on('join-room', ({ roomId, userName, password }) => {
         try {
-            // Validation
-            if (!roomId || typeof roomId !== 'string') {
-                socket.emit('error', { message: 'Invalid room ID' });
+            if (!roomId || !userName || !password) {
+                socket.emit('error', { message: 'Datos incompletos' });
                 return;
             }
             
-            if (!userName || userName.trim().length === 0) {
-                socket.emit('error', { message: 'Username is required' });
+            const user = authorizedUsers.get(password);
+            if (!user) {
+                socket.emit('error', { message: 'No autorizado' });
                 return;
             }
             
-            const room = rooms.get(roomId);
+            let room = rooms.get(roomId);
             
             if (!room) {
-                Logger.warn(`Attempt to join non-existent room: ${roomId}`);
-                socket.emit('error', { message: 'Sala no encontrada' });
-                return;
+                room = {
+                    id: roomId,
+                    users: new Map(),
+                    host: null,
+                    createdAt: Date.now(),
+                    settings: {
+                        maxUsers: 30,
+                        allowScreenShare: true,
+                        allowRecording: true,
+                        allowChat: true
+                    }
+                };
+                rooms.set(roomId, room);
             }
             
-            // Password check
-            if (room.password && room.password !== password) {
-                Logger.warn(`Invalid password attempt for room ${roomId}`);
-                socket.emit('error', { message: 'Contraseña incorrecta' });
-                return;
-            }
-            
-            // Max users check
             if (room.users.size >= room.settings.maxUsers) {
-                socket.emit('error', { message: 'Sala llena. Intenta más tarde.' });
+                socket.emit('error', { message: 'Sala llena' });
                 return;
             }
             
-            // Join the Socket.IO room
             socket.join(roomId);
             
-            // Create user data
             const isFirstUser = room.users.size === 0;
             const userData = {
                 userId: socket.id,
-                userName: userName.trim().slice(0, 50), // Limit username length
-                role: isFirstUser ? 'host' : 'participant',
+                userName: userName.trim(),
+                role: isFirstUser ? 'host' : user.role,
                 roomId: roomId,
                 handRaised: false,
                 isMuted: false,
                 isReady: false,
-                joinedAt: Date.now(),
-                reconnectAttempts: 0
+                joinedAt: Date.now()
             };
             
-            // Store user data
             room.users.set(socket.id, userData);
             users.set(socket.id, userData);
             
-            // Set host if first user
             if (!room.host) {
                 room.host = socket.id;
-                userData.role = 'host';
             }
             
-            // Update metadata
-            room.metadata.totalJoins++;
-            
-            // ✅ CRITICAL FIX: Get list of existing users BEFORE notifying
             const existingUsers = Array.from(room.users.entries())
                 .filter(([id]) => id !== socket.id)
                 .map(([id, user]) => ({
@@ -211,13 +237,8 @@ io.on('connection', (socket) => {
                     isReady: user.isReady || false
                 }));
             
-            Logger.user(`${userName} joined room ${roomId} (${room.users.size}/${room.settings.maxUsers})`);
+            Logger.user(`${userName} (${userData.role}) joined room ${roomId} (${room.users.size}/${room.settings.maxUsers})`);
             
-            if (existingUsers.length > 0) {
-                Logger.info(`Existing users in room: ${existingUsers.map(u => u.userName).join(', ')}`);
-            }
-            
-            // ✅ STEP 1: Send confirmation WITH list of existing users
             socket.emit('joined-room', {
                 success: true,
                 userData: userData,
@@ -228,10 +249,9 @@ io.on('connection', (socket) => {
                     maxUsers: room.settings.maxUsers,
                     settings: room.settings
                 },
-                existingUsers: existingUsers // ← KEY: Who's already here
+                existingUsers: existingUsers
             });
             
-            // ✅ STEP 2: Notify others about the new user
             socket.to(roomId).emit('user-connected', {
                 userId: userData.userId,
                 userName: userData.userName,
@@ -241,65 +261,19 @@ io.on('connection', (socket) => {
                 isReady: false
             });
             
-            Logger.success(`User sync complete: ${userName} (${existingUsers.length} existing users)`);
-            
         } catch (error) {
             Logger.error('Error in join-room:', error.message);
-            socket.emit('error', { message: 'Error al unirse a la sala' });
+            socket.emit('error', { message: 'Error al unirse' });
         }
     });
-    
-    // ═══════════════════════════════════════════════════════
-    // USER READY - Enhanced with validation
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('user-ready', ({ roomId, userName, role }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) {
-                Logger.warn(`user-ready: Room ${roomId} not found`);
-                return;
-            }
-            
-            const userData = room.users.get(socket.id);
-            if (!userData) {
-                Logger.warn(`user-ready: User ${socket.id} not in room ${roomId}`);
-                return;
-            }
-            
-            userData.isReady = true;
-            Logger.info(`User ready: ${userName} in room ${roomId}`);
-            
-            // Notify others that user is ready for WebRTC
-            socket.to(roomId).emit('user-ready', {
-                userId: socket.id,
-                userName: userData.userName,
-                role: userData.role
-            });
-            
-        } catch (error) {
-            Logger.error('Error in user-ready:', error.message);
-        }
-    });
-    
-    // ═══════════════════════════════════════════════════════
-    // WEBRTC SIGNALING - Enhanced with validation
-    // ═══════════════════════════════════════════════════════
     
     socket.on('signal', ({ to, signal, roomId }) => {
         try {
-            if (!to || !signal || !roomId) {
-                Logger.warn('Invalid signal data received');
-                return;
-            }
+            if (!to || !signal || !roomId) return;
             
             const room = rooms.get(roomId);
-            if (!room || !room.users.has(socket.id)) {
-                Logger.warn(`Signal from unauthorized user: ${socket.id}`);
-                return;
-            }
+            if (!room || !room.users.has(socket.id)) return;
             
-            // Forward signal to target peer
             io.to(to).emit('signal', {
                 from: socket.id,
                 signal: signal
@@ -310,90 +284,13 @@ io.on('connection', (socket) => {
         }
     });
     
-    // ═══════════════════════════════════════════════════════
-    // SCREEN SHARING
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('screen-share-start', ({ roomId, userName }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) return;
-            
-            Logger.info(`Screen share started: ${userName} in room ${roomId}`);
-            
-            socket.to(roomId).emit('screen-share-started', {
-                userId: socket.id,
-                userName: userName
-            });
-            
-        } catch (error) {
-            Logger.error('Error in screen-share-start:', error.message);
-        }
-    });
-    
-    socket.on('screen-signal', ({ to, signal, roomId }) => {
-        try {
-            if (!to || !signal) return;
-            
-            io.to(to).emit('screen-signal', {
-                from: socket.id,
-                signal: signal
-            });
-            
-        } catch (error) {
-            Logger.error('Error in screen-signal:', error.message);
-        }
-    });
-    
-    socket.on('screen-share-stop', ({ roomId, userId }) => {
-        try {
-            socket.to(roomId).emit('screen-share-stopped', {
-                userId: userId || socket.id
-            });
-            
-            Logger.info(`Screen share stopped: ${socket.id} in room ${roomId}`);
-            
-        } catch (error) {
-            Logger.error('Error in screen-share-stop:', error.message);
-        }
-    });
-    
-    // ═══════════════════════════════════════════════════════
-    // AUDIO/MIC STATUS
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('mic-status', ({ roomId, userId, isMuted }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) return;
-            
-            const userData = room.users.get(socket.id);
-            if (userData) {
-                userData.isMuted = isMuted;
-                
-                socket.to(roomId).emit('user-mic-status', {
-                    userId: socket.id,
-                    isMuted: isMuted
-                });
-            }
-            
-        } catch (error) {
-            Logger.error('Error in mic-status:', error.message);
-        }
-    });
-    
-    // ═══════════════════════════════════════════════════════
-    // CHAT MESSAGES
-    // ═══════════════════════════════════════════════════════
-    
     socket.on('chat-message', ({ roomId, userId, userName, message }) => {
         try {
             if (!message || message.trim().length === 0) return;
             
             const room = rooms.get(roomId);
-            if (!room || !room.settings.allowChat) return;
+            if (!room) return;
             
-            // Sanitize message (basic)
             const sanitizedMessage = message.trim().slice(0, 500);
             
             socket.to(roomId).emit('chat-message', {
@@ -408,35 +305,6 @@ io.on('connection', (socket) => {
         }
     });
     
-    // ═══════════════════════════════════════════════════════
-    // HAND RAISED
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('hand-raised', ({ roomId, userId, userName, raised }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) return;
-            
-            const userData = room.users.get(socket.id);
-            if (userData) {
-                userData.handRaised = raised;
-                
-                socket.to(roomId).emit('hand-raised', {
-                    userId: socket.id,
-                    userName: userName,
-                    raised: raised
-                });
-            }
-            
-        } catch (error) {
-            Logger.error('Error in hand-raised:', error.message);
-        }
-    });
-    
-    // ═══════════════════════════════════════════════════════
-    // REACTIONS
-    // ═══════════════════════════════════════════════════════
-    
     socket.on('reaction', ({ roomId, userId, userName, emoji }) => {
         try {
             socket.to(roomId).emit('reaction', {
@@ -450,10 +318,6 @@ io.on('connection', (socket) => {
             Logger.error('Error in reaction:', error.message);
         }
     });
-    
-    // ═══════════════════════════════════════════════════════
-    // DRAWING/WHITEBOARD
-    // ═══════════════════════════════════════════════════════
     
     socket.on('draw-line', ({ roomId, fromX, fromY, toX, toY, color }) => {
         try {
@@ -475,38 +339,6 @@ io.on('connection', (socket) => {
         }
     });
     
-    // ═══════════════════════════════════════════════════════
-    // USER UPDATE
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('update-user', ({ roomId, userId, userName, role }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) return;
-            
-            const userData = room.users.get(socket.id);
-            if (userData) {
-                if (userName) userData.userName = userName.trim().slice(0, 50);
-                if (role && (role === 'host' || role === 'participant')) userData.role = role;
-                
-                socket.to(roomId).emit('user-updated', {
-                    userId: socket.id,
-                    userName: userData.userName,
-                    role: userData.role
-                });
-                
-                Logger.info(`User updated: ${userData.userName} (${userData.role})`);
-            }
-            
-        } catch (error) {
-            Logger.error('Error in update-user:', error.message);
-        }
-    });
-    
-    // ═══════════════════════════════════════════════════════
-    // DISCONNECT - Enhanced cleanup
-    // ═══════════════════════════════════════════════════════
-    
     socket.on('disconnect', (reason) => {
         try {
             Logger.warn(`User disconnected: ${socket.id} (${reason})`);
@@ -518,15 +350,12 @@ io.on('connection', (socket) => {
             const room = rooms.get(roomId);
             
             if (room) {
-                // Remove user from room
                 room.users.delete(socket.id);
                 
-                // Notify others
                 socket.to(roomId).emit('user-disconnected', socket.id);
                 
                 Logger.user(`${userData.userName} left room ${roomId} (${room.users.size} remaining)`);
                 
-                // Transfer host if needed
                 if (room.host === socket.id && room.users.size > 0) {
                     const newHostId = Array.from(room.users.keys())[0];
                     const newHostData = room.users.get(newHostId);
@@ -539,10 +368,9 @@ io.on('connection', (socket) => {
                         userName: newHostData.userName
                     });
                     
-                    Logger.room(`New host assigned: ${newHostData.userName} in room ${roomId}`);
+                    Logger.room(`New host: ${newHostData.userName} in room ${roomId}`);
                 }
                 
-                // Schedule room cleanup if empty
                 if (room.users.size === 0) {
                     setTimeout(() => {
                         const currentRoom = rooms.get(roomId);
@@ -550,66 +378,22 @@ io.on('connection', (socket) => {
                             rooms.delete(roomId);
                             Logger.room(`Room deleted: ${roomId} (empty)`);
                         }
-                    }, 5 * 60 * 1000); // 5 minutes grace period
+                    }, 5 * 60 * 1000);
                 }
             }
             
-            // Clean up user data
             users.delete(socket.id);
             
         } catch (error) {
             Logger.error('Error in disconnect:', error.message);
         }
     });
-    
-    // ═══════════════════════════════════════════════════════
-    // RECONNECTION HANDLER
-    // ═══════════════════════════════════════════════════════
-    
-    socket.on('reconnect-to-room', ({ roomId, userName, previousId }) => {
-        try {
-            const room = rooms.get(roomId);
-            if (!room) {
-                socket.emit('error', { message: 'Room no longer exists' });
-                return;
-            }
-            
-            Logger.info(`Reconnection attempt: ${userName} to room ${roomId}`);
-            
-            // Trigger standard join process
-            socket.emit('reconnect-success', { roomId });
-            
-        } catch (error) {
-            Logger.error('Error in reconnect-to-room:', error.message);
-        }
-    });
 });
 
 // ═══════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS
+// PERIODIC CLEANUP
 // ═══════════════════════════════════════════════════════════
 
-function generateRoomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    
-    for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    
-    // Ensure uniqueness
-    if (rooms.has(code)) {
-        return generateRoomCode();
-    }
-    
-    return code;
-}
-
-// ═══════════════════════════════════════════════════════════
-// PERIODIC CLEANUP TASKS
-// ═══════════════════════════════════════════════════════════
-
-// Clean up old empty rooms every hour
 setInterval(() => {
     const now = Date.now();
     const ONE_HOUR = 60 * 60 * 1000;
@@ -628,12 +412,6 @@ setInterval(() => {
     
 }, 60 * 60 * 1000);
 
-// Log statistics every 5 minutes
-setInterval(() => {
-    const totalUsers = Array.from(rooms.values()).reduce((sum, room) => sum + room.users.size, 0);
-    Logger.info(`Stats: ${rooms.size} rooms, ${totalUsers} total users, ${users.size} connections`);
-}, 5 * 60 * 1000);
-
 // ═══════════════════════════════════════════════════════════
 // SERVER STARTUP
 // ═══════════════════════════════════════════════════════════
@@ -646,6 +424,7 @@ http.listen(PORT, () => {
     console.log('║                                                    ║');
     console.log('║            🎯 OZYMEET SERVER PRO 🎯                ║');
     console.log('║        Professional Video Conference Platform      ║');
+    console.log('║                   Version 3.0                      ║');
     console.log('║                                                    ║');
     console.log('╚════════════════════════════════════════════════════╝');
     console.log('');
@@ -653,27 +432,26 @@ http.listen(PORT, () => {
     console.log(`🌐 Local:  http://localhost:${PORT}`);
     console.log(`📊 Health: http://localhost:${PORT}/health`);
     console.log('');
-    console.log('✅ TOP 10 Professional Features Active:');
+    console.log('🔐 AUTHENTICATION SYSTEM ACTIVE');
+    console.log(`   Master Password: 0909`);
+    console.log(`   Registered users: ${authorizedUsers.size}`);
+    console.log('');
+    console.log('✅ Features Active:');
+    console.log('   • Single Room Authentication');
+    console.log('   • Admin User Management');
     console.log('   • Real-time Audio (30 users)');
-    console.log('   • Dual Screen Sharing');
-    console.log('   • Interactive Pointer');
+    console.log('   • Screen Sharing');
     console.log('   • Live Chat');
-    console.log('   • Custom Names & Roles');
-    console.log('   • Hand Raise System');
+    console.log('   • Whiteboard');
     console.log('   • Emoji Reactions');
-    console.log('   • Meeting Recording');
-    console.log('   • Password Protection');
-    console.log('   • Shared Whiteboard');
     console.log('');
     console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
     console.log('');
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
     Logger.info('SIGTERM received. Shutting down gracefully...');
     
-    // Notify all users
     io.emit('server-shutdown', { message: 'Server is restarting. Please reconnect in a moment.' });
     
     http.close(() => {
@@ -681,4 +459,5 @@ process.on('SIGTERM', () => {
         process.exit(0);
     });
 });
+
 
