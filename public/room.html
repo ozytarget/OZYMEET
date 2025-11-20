@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZYMEET - Sala de Conferencia</title>
+    <title>OZYMEET - Sala</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -52,13 +52,18 @@
             text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
         }
 
-        .room-id {
-            font-size: 14px;
+        .user-badge {
+            font-size: 13px;
             color: #8b92b8;
             background: rgba(255, 255, 255, 0.05);
             padding: 6px 12px;
             border-radius: 6px;
-            font-family: 'Courier New', monospace;
+        }
+
+        .admin-badge {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            font-weight: 600;
         }
 
         .connection-status {
@@ -186,6 +191,10 @@
             color: #00ff88;
         }
 
+        .participant-item.muted i {
+            color: #ff4444;
+        }
+
         .controls-section {
             display: flex;
             align-items: center;
@@ -204,6 +213,7 @@
             justify-content: center;
             font-size: 20px;
             transition: all 0.3s;
+            position: relative;
         }
 
         .control-btn:hover {
@@ -216,17 +226,9 @@
             color: #050816;
         }
 
-        .control-btn.primary:hover {
-            box-shadow: 0 8px 16px rgba(0, 255, 136, 0.4);
-        }
-
         .control-btn.danger {
             background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
             color: #fff;
-        }
-
-        .control-btn.danger:hover {
-            box-shadow: 0 8px 16px rgba(255, 68, 68, 0.4);
         }
 
         .control-btn.secondary {
@@ -314,11 +316,6 @@
             color: #8b92b8;
             font-size: 20px;
             cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .chat-close:hover {
-            color: #fff;
         }
 
         .chat-messages {
@@ -344,11 +341,6 @@
             font-size: 12px;
         }
 
-        .chat-message .text {
-            color: #e0e0e0;
-            word-wrap: break-word;
-        }
-
         .chat-input-container {
             padding: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -367,10 +359,6 @@
             outline: none;
         }
 
-        #chatInput:focus {
-            border-color: rgba(0, 255, 136, 0.5);
-        }
-
         #sendChat {
             background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
             border: none;
@@ -379,12 +367,6 @@
             color: #050816;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        #sendChat:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.4);
         }
 
         .modal-overlay {
@@ -439,12 +421,6 @@
             color: #fff;
             font-size: 18px;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 68, 68, 0.3);
-            transform: rotate(90deg);
         }
 
         .modal-body {
@@ -473,16 +449,10 @@
             padding: 8px 16px;
             color: #fff;
             cursor: pointer;
-            transition: all 0.2s;
             font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .whiteboard-btn:hover {
-            background: rgba(0, 255, 136, 0.2);
-            border-color: rgba(0, 255, 136, 0.5);
         }
 
         .whiteboard-btn.active {
@@ -501,7 +471,6 @@
             left: 0;
             margin-top: 8px;
             background: rgba(10, 14, 39, 0.98);
-            backdrop-filter: blur(20px);
             border: 1px solid rgba(0, 255, 136, 0.3);
             border-radius: 12px;
             padding: 12px;
@@ -509,7 +478,6 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
             z-index: 1100;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
         .color-picker-dropdown.active {
@@ -521,28 +489,11 @@
             height: 32px;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s;
             border: 2px solid transparent;
-        }
-
-        .color-option:hover {
-            transform: scale(1.15);
-            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .color-option.selected {
             border-color: #00ff88;
-            box-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
-        }
-
-        .stroke-width-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #strokeWidth {
-            width: 100px;
         }
 
         #whiteboardCanvas {
@@ -553,39 +504,97 @@
             border-radius: 8px;
         }
 
-        .settings-grid {
-            display: grid;
-            gap: 20px;
+        .admin-panel {
+            position: fixed;
+            left: -350px;
+            top: 60px;
+            bottom: 140px;
+            width: 350px;
+            background: rgba(10, 14, 39, 0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 255, 136, 0.2);
+            transition: left 0.3s;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
         }
 
-        .setting-item {
-            background: rgba(255, 255, 255, 0.03);
+        .admin-panel.active {
+            left: 0;
+        }
+
+        .admin-header {
             padding: 16px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .setting-item h3 {
+        .admin-header h3 {
             font-size: 16px;
             color: #00ff88;
-            margin-bottom: 12px;
         }
 
-        .setting-item select,
-        .setting-item input {
+        .admin-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .admin-section {
+            margin-bottom: 24px;
+        }
+
+        .admin-section h4 {
+            font-size: 14px;
+            color: #8b92b8;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .admin-input {
             width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            padding: 10px;
             color: #fff;
             font-size: 14px;
             outline: none;
         }
 
-        .setting-item select:focus,
-        .setting-item input:focus {
-            border-color: rgba(0, 255, 136, 0.5);
+        .admin-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .user-list-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .user-list-item .name {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .user-list-item .role {
+            color: #8b92b8;
+            font-size: 11px;
+            text-transform: uppercase;
         }
 
         .floating-emoji {
@@ -609,12 +618,10 @@
 
         ::-webkit-scrollbar {
             width: 8px;
-            height: 8px;
         }
 
         ::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
@@ -622,21 +629,10 @@
             border-radius: 4px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 255, 136, 0.5);
-        }
-
-        @media (max-width: 1200px) {
-            .bottom-bar {
-                grid-template-columns: 200px 1fr 200px;
-            }
-        }
-
         @media (max-width: 900px) {
             .bottom-bar {
                 height: auto;
                 grid-template-columns: 1fr;
-                gap: 12px;
             }
             
             .participants-section,
@@ -650,12 +646,12 @@
     <div class="room-container">
         <div class="top-bar">
             <div class="room-info">
-                <div class="room-name">OZYMEET Professional</div>
-                <div class="room-id" id="roomIdDisplay">Cargando...</div>
+                <div class="room-name">OZYMEET</div>
+                <div class="user-badge" id="userBadge">Cargando...</div>
             </div>
             <div class="connection-status">
                 <div class="status-dot"></div>
-                <span id="connectionStatus">Conectado</span>
+                <span id="connectionStatus">Conectando...</span>
             </div>
         </div>
 
@@ -672,14 +668,9 @@
         <div class="bottom-bar">
             <div class="participants-section">
                 <div class="section-title">
-                    <i class="fas fa-users"></i> Participantes (<span id="participantCount">1</span>)
+                    <i class="fas fa-users"></i> Participantes (<span id="participantCount">0</span>)
                 </div>
-                <div class="participants-list" id="participantsList">
-                    <div class="participant-item">
-                        <i class="fas fa-microphone"></i>
-                        <span>Tú</span>
-                    </div>
-                </div>
+                <div class="participants-list" id="participantsList"></div>
             </div>
 
             <div class="controls-section">
@@ -695,7 +686,7 @@
                     <i class="fas fa-pen"></i>
                 </button>
                 
-                <button class="control-btn secondary" id="recordBtn" title="Grabar Reunión">
+                <button class="control-btn secondary" id="recordBtn" title="Grabar">
                     <i class="fas fa-circle"></i>
                 </button>
                 
@@ -703,7 +694,7 @@
                     <i class="fas fa-comment"></i>
                 </button>
                 
-                <button class="control-btn secondary" id="settingsBtn" title="Configuración">
+                <button class="control-btn secondary admin-only" id="toggleAdmin" title="Admin" style="display: none;">
                     <i class="fas fa-cog"></i>
                 </button>
                 
@@ -729,10 +720,6 @@
                     <button class="reaction-btn" data-emoji="📈">📈</button>
                     <button class="reaction-btn" data-emoji="📉">📉</button>
                     <button class="reaction-btn" data-emoji="💎">💎</button>
-                    <button class="reaction-btn" data-emoji="🎯">🎯</button>
-                    <button class="reaction-btn" data-emoji="✨">✨</button>
-                    <button class="reaction-btn" data-emoji="⚡">⚡</button>
-                    <button class="reaction-btn" data-emoji="💡">💡</button>
                 </div>
             </div>
         </div>
@@ -747,15 +734,42 @@
         </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-container">
-            <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
+            <input type="text" id="chatInput" placeholder="Mensaje...">
             <button id="sendChat">Enviar</button>
+        </div>
+    </div>
+
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <h3><i class="fas fa-shield-alt"></i> Panel Admin</h3>
+            <button class="chat-close" id="closeAdmin">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="admin-content">
+            <div class="admin-section">
+                <h4>Crear Usuario</h4>
+                <input type="text" class="admin-input" id="newUserName" placeholder="Nombre">
+                <input type="text" class="admin-input" id="newUserPassword" placeholder="Password">
+                <select class="admin-input" id="newUserRole">
+                    <option value="participant">Participante</option>
+                    <option value="host">Host</option>
+                </select>
+                <button class="admin-btn" id="createUserBtn">Crear Usuario</button>
+            </div>
+
+            <div class="admin-section">
+                <h4>Usuarios Registrados</h4>
+                <div id="usersList"></div>
+                <button class="admin-btn" id="refreshUsersBtn" style="margin-top: 12px;">Actualizar Lista</button>
+            </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="whiteboardModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-pen"></i> Pizarra Colaborativa</h2>
+                <h2><i class="fas fa-pen"></i> Pizarra</h2>
                 <button class="modal-close" id="closeWhiteboard">
                     <i class="fas fa-times"></i>
                 </button>
@@ -770,28 +784,21 @@
                 
                 <div class="color-picker-container">
                     <button class="whiteboard-btn" id="colorPickerBtn">
-                        <i class="fas fa-palette"></i> 
-                        <span id="currentColorLabel">Negro</span>
-                        <div style="width: 20px; height: 20px; background: #000000; border-radius: 4px; margin-left: 8px;" id="currentColorPreview"></div>
+                        <i class="fas fa-palette"></i> Color
+                        <div style="width: 20px; height: 20px; background: #000; border-radius: 4px; margin-left: 8px;" id="currentColorPreview"></div>
                     </button>
                     <div class="color-picker-dropdown" id="colorPickerDropdown">
-                        <div class="color-option" data-color="#000000" style="background: #000000;"></div>
-                        <div class="color-option" data-color="#FF0000" style="background: #FF0000;"></div>
-                        <div class="color-option" data-color="#00FF00" style="background: #00FF00;"></div>
-                        <div class="color-option" data-color="#0000FF" style="background: #0000FF;"></div>
-                        <div class="color-option" data-color="#FFFF00" style="background: #FFFF00;"></div>
-                        <div class="color-option" data-color="#FF00FF" style="background: #FF00FF;"></div>
-                        <div class="color-option" data-color="#00FFFF" style="background: #00FFFF;"></div>
+                        <div class="color-option" data-color="#000000" style="background: #000;"></div>
+                        <div class="color-option" data-color="#FF0000" style="background: #F00;"></div>
+                        <div class="color-option" data-color="#00FF00" style="background: #0F0;"></div>
+                        <div class="color-option" data-color="#0000FF" style="background: #00F;"></div>
+                        <div class="color-option" data-color="#FFFF00" style="background: #FF0;"></div>
+                        <div class="color-option" data-color="#FF00FF" style="background: #F0F;"></div>
+                        <div class="color-option" data-color="#00FFFF" style="background: #0FF;"></div>
                         <div class="color-option" data-color="#FFA500" style="background: #FFA500;"></div>
                         <div class="color-option" data-color="#800080" style="background: #800080;"></div>
                         <div class="color-option" data-color="#00ff88" style="background: #00ff88;"></div>
                     </div>
-                </div>
-
-                <div class="stroke-width-container">
-                    <label style="color: #8b92b8; font-size: 13px;">Grosor:</label>
-                    <input type="range" id="strokeWidth" min="1" max="20" value="3">
-                    <span id="strokeWidthValue" style="color: #fff; font-size: 13px;">3px</span>
                 </div>
 
                 <button class="whiteboard-btn" id="clearCanvas">
@@ -804,41 +811,601 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal-content" style="width: 500px;">
-            <div class="modal-header">
-                <h2><i class="fas fa-cog"></i> Configuración</h2>
-                <button class="modal-close" id="closeSettings">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <h3>Micrófono</h3>
-                        <select id="microphoneSelect">
-                            <option>Detectando dispositivos...</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <h3>Tu Nombre</h3>
-                        <input type="text" id="displayName" placeholder="Ingresa tu nombre">
-                    </div>
-                    <div class="setting-item">
-                        <h3>Calidad de Audio</h3>
-                        <select id="audioQuality">
-                            <option value="high">Alta</option>
-                            <option value="medium" selected>Media</option>
-                            <option value="low">Baja</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.1/simplepeer.min.js"></script>
-    <script src="client.js"></script>
+    <script>
+        // ============================================
+        // VERIFICAR AUTENTICACIÓN
+        // ============================================
+        const authData = JSON.parse(sessionStorage.getItem('ozymeet_auth') || '{}');
+        
+        if (!authData.userName || !authData.password) {
+            window.location.href = '/';
+        }
+
+        const socket = io();
+        const peers = {};
+        const audioElements = new Map();
+
+        let localStream = null;
+        let screenStream = null;
+        let mediaRecorder = null;
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        let isDrawing = false;
+        let whiteboardContext = null;
+
+        const roomId = window.location.pathname.split('/').pop();
+        const userName = authData.userName;
+        const userRole = authData.role || 'participant';
+
+        // Mostrar badge de usuario
+        const badge = document.getElementById('userBadge');
+        if (userRole === 'admin') {
+            badge.textContent = `👑 ${userName} (Admin)`;
+            badge.classList.add('admin-badge');
+            document.getElementById('toggleAdmin').style.display = 'flex';
+        } else if (userRole === 'host') {
+            badge.textContent = `🎯 ${userName} (Host)`;
+        } else {
+            badge.textContent = userName;
+        }
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        async function init() {
+            try {
+                console.log('🎤 Iniciando audio...');
+                
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
+
+                console.log('✅ Audio capturado');
+                
+                socket.emit('join-room', {
+                    roomId: roomId,
+                    userName: userName,
+                    password: authData.password
+                });
+                
+                initControls();
+                initWhiteboard();
+                initChat();
+                initAdmin();
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error al acceder al micrófono');
+            }
+        }
+
+        // ============================================
+        // SOCKET EVENTOS
+        // ============================================
+        socket.on('joined-room', ({ userData, roomData, existingUsers }) => {
+            console.log('✅ Unido a sala');
+            document.getElementById('connectionStatus').textContent = 'Conectado';
+            
+            existingUsers.forEach(user => {
+                if (user.userId !== socket.id) {
+                    connectToNewUser(user.userId);
+                }
+            });
+            
+            updateParticipantsList();
+        });
+
+        socket.on('user-connected', ({ userId, userName }) => {
+            console.log('👤 Usuario conectado:', userName);
+            connectToNewUser(userId);
+        });
+
+        socket.on('user-disconnected', userId => {
+            console.log('👋 Usuario desconectado');
+            if (peers[userId]) {
+                peers[userId].destroy();
+                delete peers[userId];
+            }
+            
+            if (audioElements.has(userId)) {
+                audioElements.get(userId).remove();
+                audioElements.delete(userId);
+            }
+            
+            updateParticipantsList();
+        });
+
+        socket.on('chat-message', ({ userId, userName, message }) => {
+            addChatMessage(userName, message);
+        });
+
+        socket.on('reaction', ({ emoji }) => {
+            showFloatingEmoji(emoji);
+        });
+
+        socket.on('draw-line', (data) => {
+            if (whiteboardContext) {
+                drawOnCanvas(data);
+            }
+        });
+
+        socket.on('clear-drawing', () => {
+            if (whiteboardContext) {
+                clearWhiteboardCanvas();
+            }
+        });
+
+        // ============================================
+        // WEBRTC
+        // ============================================
+        function connectToNewUser(userId) {
+            if (!localStream) return;
+            
+            try {
+                const peer = new SimplePeer({
+                    initiator: true,
+                    trickle: false,
+                    stream: localStream,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' }
+                        ]
+                    }
+                });
+
+                peer.on('signal', signal => {
+                    socket.emit('signal', { to: userId, signal, roomId });
+                });
+
+                peer.on('stream', remoteStream => {
+                    addAudioStream(userId, remoteStream);
+                });
+
+                peer.on('error', err => {
+                    console.error('Error peer:', err);
+                });
+
+                peers[userId] = peer;
+                
+            } catch (error) {
+                console.error('Error conectando:', error);
+            }
+        }
+
+        socket.on('signal', ({ from, signal }) => {
+            try {
+                if (peers[from]) {
+                    peers[from].signal(signal);
+                } else {
+                    const peer = new SimplePeer({
+                        initiator: false,
+                        trickle: false,
+                        stream: localStream,
+                        config: {
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' }
+                            ]
+                        }
+                    });
+
+                    peer.on('signal', responseSignal => {
+                        socket.emit('signal', { to: from, signal: responseSignal, roomId });
+                    });
+
+                    peer.on('stream', remoteStream => {
+                        addAudioStream(from, remoteStream);
+                    });
+
+                    peer.on('error', err => {
+                        console.error('Error peer:', err);
+                    });
+
+                    peer.signal(signal);
+                    peers[from] = peer;
+                }
+            } catch (error) {
+                console.error('Error señal:', error);
+            }
+        });
+
+        function addAudioStream(userId, stream) {
+            if (audioElements.has(userId)) {
+                audioElements.get(userId).srcObject = stream;
+                return;
+            }
+
+            const audio = document.createElement('audio');
+            audio.srcObject = stream;
+            audio.autoplay = true;
+            audio.playsInline = true;
+            
+            const playAudio = async (retries = 3) => {
+                try {
+                    await audio.play();
+                    console.log('✅ Audio reproduciendo');
+                } catch (error) {
+                    if (retries > 0) {
+                        setTimeout(() => playAudio(retries - 1), 1000);
+                    }
+                }
+            };
+
+            document.body.appendChild(audio);
+            audioElements.set(userId, audio);
+            playAudio();
+            updateParticipantsList();
+        }
+
+        function updateParticipantsList() {
+            const list = document.getElementById('participantsList');
+            const count = document.getElementById('participantCount');
+            
+            const total = Object.keys(peers).length + 1;
+            count.textContent = total;
+            
+            list.innerHTML = `
+                <div class="participant-item">
+                    <i class="fas fa-microphone"></i>
+                    <span>Tú (${userRole})</span>
+                </div>
+            `;
+            
+            Object.keys(peers).forEach((id, i) => {
+                list.innerHTML += `
+                    <div class="participant-item">
+                        <i class="fas fa-microphone"></i>
+                        <span>Usuario ${i + 1}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // ============================================
+        // CONTROLES
+        // ============================================
+        function initControls() {
+            const toggleMic = document.getElementById('toggleMic');
+            const shareScreen = document.getElementById('shareScreen');
+            const openWhiteboard = document.getElementById('openWhiteboard');
+            const recordBtn = document.getElementById('recordBtn');
+            const toggleChat = document.getElementById('toggleChat');
+            const leaveRoom = document.getElementById('leaveRoom');
+
+            let isMuted = false;
+            toggleMic.addEventListener('click', () => {
+                isMuted = !isMuted;
+                if (localStream) {
+                    localStream.getAudioTracks()[0].enabled = !isMuted;
+                }
+                toggleMic.classList.toggle('danger', isMuted);
+                toggleMic.classList.toggle('primary', !isMuted);
+                toggleMic.querySelector('i').className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+            });
+
+            shareScreen.addEventListener('click', startScreenShare);
+            openWhiteboard.addEventListener('click', () => {
+                document.getElementById('whiteboardModal').classList.add('active');
+                resizeWhiteboardCanvas();
+            });
+
+            toggleChat.addEventListener('click', () => {
+                document.getElementById('chatPanel').classList.toggle('active');
+            });
+
+            leaveRoom.addEventListener('click', () => {
+                if (confirm('¿Salir de la sala?')) {
+                    sessionStorage.removeItem('ozymeet_auth');
+                    window.location.href = '/';
+                }
+            });
+
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const emoji = btn.dataset.emoji;
+                    socket.emit('reaction', { emoji, roomId, userId: socket.id, userName });
+                    showFloatingEmoji(emoji);
+                });
+            });
+        }
+
+        async function startScreenShare() {
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: 'always' },
+                    audio: false
+                });
+
+                document.getElementById('sharedScreen').srcObject = screenStream;
+                document.getElementById('sharedScreenContainer').classList.add('active');
+                document.getElementById('noScreenMessage').style.display = 'none';
+
+                screenStream.getVideoTracks()[0].onended = () => {
+                    document.getElementById('sharedScreenContainer').classList.remove('active');
+                    document.getElementById('noScreenMessage').style.display = 'block';
+                };
+
+            } catch (error) {
+                console.error('Error compartir pantalla:', error);
+            }
+        }
+
+        // ============================================
+        // PIZARRA
+        // ============================================
+        function initWhiteboard() {
+            const canvas = document.getElementById('whiteboardCanvas');
+            whiteboardContext = canvas.getContext('2d');
+
+            document.getElementById('closeWhiteboard').addEventListener('click', () => {
+                document.getElementById('whiteboardModal').classList.remove('active');
+            });
+
+            document.querySelectorAll('.whiteboard-btn[data-tool]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.whiteboard-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTool = btn.dataset.tool;
+                });
+            });
+
+            const colorPickerBtn = document.getElementById('colorPickerBtn');
+            const colorPickerDropdown = document.getElementById('colorPickerDropdown');
+
+            colorPickerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                colorPickerDropdown.classList.toggle('active');
+            });
+
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    currentColor = option.dataset.color;
+                    document.getElementById('currentColorPreview').style.background = currentColor;
+                    document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    colorPickerDropdown.classList.remove('active');
+                });
+            });
+
+            document.getElementById('clearCanvas').addEventListener('click', () => {
+                clearWhiteboardCanvas();
+                socket.emit('clear-drawing', { roomId });
+            });
+
+            let lastX = 0;
+            let lastY = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const drawData = {
+                    tool: currentTool,
+                    color: currentColor,
+                    fromX: lastX,
+                    fromY: lastY,
+                    toX: x,
+                    toY: y
+                };
+
+                drawOnCanvas(drawData);
+                socket.emit('draw-line', { roomId, ...drawData });
+
+                lastX = x;
+                lastY = y;
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDrawing = false;
+            });
+        }
+
+        function drawOnCanvas(data) {
+            if (!whiteboardContext) return;
+
+            whiteboardContext.beginPath();
+            whiteboardContext.moveTo(data.fromX, data.fromY);
+            whiteboardContext.lineTo(data.toX, data.toY);
+            
+            if (data.tool === 'pen') {
+                whiteboardContext.strokeStyle = data.color;
+                whiteboardContext.lineWidth = 3;
+            } else {
+                whiteboardContext.strokeStyle = '#ffffff';
+                whiteboardContext.lineWidth = 10;
+            }
+            
+            whiteboardContext.lineCap = 'round';
+            whiteboardContext.stroke();
+        }
+
+        function clearWhiteboardCanvas() {
+            if (!whiteboardContext) return;
+            const canvas = document.getElementById('whiteboardCanvas');
+            whiteboardContext.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function resizeWhiteboardCanvas() {
+            const canvas = document.getElementById('whiteboardCanvas');
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        // ============================================
+        // CHAT
+        // ============================================
+        function initChat() {
+            const chatInput = document.getElementById('chatInput');
+            const sendChat = document.getElementById('sendChat');
+            const closeChat = document.getElementById('closeChat');
+
+            sendChat.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+
+            closeChat.addEventListener('click', () => {
+                document.getElementById('chatPanel').classList.remove('active');
+            });
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('chat-message', { roomId, userId: socket.id, userName, message });
+                addChatMessage('Tú', message);
+                input.value = '';
+            }
+        }
+
+        function addChatMessage(sender, message) {
+            const messages = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <div class="sender">${sender}</div>
+                <div class="text">${message}</div>
+            `;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // ============================================
+        // ADMIN PANEL
+        // ============================================
+        function initAdmin() {
+            if (userRole !== 'admin') return;
+
+            const toggleAdmin = document.getElementById('toggleAdmin');
+            const closeAdmin = document.getElementById('closeAdmin');
+            const createUserBtn = document.getElementById('createUserBtn');
+            const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+
+            toggleAdmin.addEventListener('click', () => {
+                document.getElementById('adminPanel').classList.toggle('active');
+                loadUsersList();
+            });
+
+            closeAdmin.addEventListener('click', () => {
+                document.getElementById('adminPanel').classList.remove('active');
+            });
+
+            createUserBtn.addEventListener('click', async () => {
+                const name = document.getElementById('newUserName').value.trim();
+                const password = document.getElementById('newUserPassword').value.trim();
+                const role = document.getElementById('newUserRole').value;
+
+                if (!name || !password) {
+                    alert('Completa todos los campos');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/admin/create-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            adminPassword: authData.password,
+                            newUserName: name,
+                            newUserPassword: password,
+                            newUserRole: role
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('✅ Usuario creado');
+                        document.getElementById('newUserName').value = '';
+                        document.getElementById('newUserPassword').value = '';
+                        loadUsersList();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al crear usuario');
+                }
+            });
+
+            refreshUsersBtn.addEventListener('click', loadUsersList);
+        }
+
+        async function loadUsersList() {
+            try {
+                const response = await fetch('/admin/list-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminPassword: authData.password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const list = document.getElementById('usersList');
+                    list.innerHTML = '';
+
+                    data.users.forEach(user => {
+                        list.innerHTML += `
+                            <div class="user-list-item">
+                                <div class="name">${user.name}</div>
+                                <div class="role">${user.role} • ${user.password}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // EMOJIS
+        // ============================================
+        function showFloatingEmoji(emoji) {
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.textContent = emoji;
+            el.style.left = `${Math.random() * (window.innerWidth - 100) + 50}px`;
+            el.style.bottom = '150px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        // ============================================
+        // INICIAR
+        // ============================================
+        window.addEventListener('load', init);
+
+        window.addEventListener('beforeunload', () => {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            Object.values(peers).forEach(peer => peer.destroy());
+        });
+    </script>
 </body>
 </html>
