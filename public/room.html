@@ -216,13 +216,14 @@
             background: #1557b0;
         }
 
+        /* BOTÓN COLGAR - 50% MENOS ROJO (MÁS SUAVE) */
         .control-btn.exit {
-            background: #ea4335;
+            background: #c9554d;  /* Era #ea4335, ahora más suave */
             color: white;
         }
 
         .control-btn.exit:hover {
-            background: #d33828;
+            background: #b94842;  /* Era #d33828, ahora más suave */
             transform: scale(1.08);
         }
 
@@ -321,7 +322,7 @@
             transform: scale(1.1);
         }
 
-        /* Floating Chat Messages */
+        /* CHAT FLOTANTE - TRANSPARENTE Y LIMPIO */
         .floating-chat {
             position: fixed;
             bottom: 140px;
@@ -332,45 +333,48 @@
         }
 
         .chat-bubble {
-            background: rgba(32, 33, 36, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 12px 16px;
-            border-radius: 18px;
-            margin-bottom: 8px;
-            animation: floatUp 5s ease-out forwards;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: transparent;  /* SIN FONDO */
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            animation: floatUp 20s ease-out forwards;  /* 20 SEGUNDOS */
+            text-shadow: 
+                1px 1px 3px rgba(0, 0, 0, 0.9),
+                -1px -1px 3px rgba(0, 0, 0, 0.9),
+                1px -1px 3px rgba(0, 0, 0, 0.9),
+                -1px 1px 3px rgba(0, 0, 0, 0.9);  /* Sombra para legibilidad */
         }
 
         .chat-bubble .sender {
             font-weight: 700;
             color: #8ab4f8;
-            font-size: 12px;
+            font-size: 13px;
             margin-bottom: 4px;
         }
 
         .chat-bubble .message {
-            color: #e8eaed;
-            font-size: 14px;
-            line-height: 1.4;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.5;
+            font-weight: 500;
         }
 
+        /* ANIMACIÓN MODIFICADA - 20 SEGUNDOS */
         @keyframes floatUp {
             0% {
                 opacity: 0;
                 transform: translateY(20px);
             }
-            10% {
+            5% {
                 opacity: 1;
                 transform: translateY(0);
             }
-            90% {
+            95% {
                 opacity: 1;
-                transform: translateY(-100px);
+                transform: translateY(-150px);
             }
             100% {
                 opacity: 0;
-                transform: translateY(-120px);
+                transform: translateY(-180px);
             }
         }
 
@@ -1003,7 +1007,6 @@
                     const videoTrack = screenStream.getVideoTracks()[0];
                     console.log('✅ Video track obtenido:', videoTrack.label);
 
-                    // USAR addTrack en lugar de replaceTrack
                     Object.entries(peers).forEach(([userId, peer]) => {
                         console.log(`📤 Enviando video a ${userId}`);
                         try {
@@ -1013,7 +1016,6 @@
                         }
                     });
 
-                    // Mostrar en vista local
                     const localCard = document.querySelector('[data-user-id="local"]');
                     if (localCard) {
                         let video = localCard.querySelector('video');
@@ -1267,6 +1269,7 @@
             sidebar.classList.remove('open');
         });
 
+        // CHAT FLOTANTE - 20 SEGUNDOS
         function addFloatingChatMessage(sender, message) {
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble';
@@ -1275,7 +1278,7 @@
                 <div class="message">${message}</div>
             `;
             floatingChat.appendChild(bubble);
-            setTimeout(() => bubble.remove(), 5000);
+            setTimeout(() => bubble.remove(), 20000);  // 20 SEGUNDOS
         }
 
         chatInput.addEventListener('keypress', (e) => {
@@ -1313,4 +1316,3 @@
     </script>
 </body>
 </html>
-
