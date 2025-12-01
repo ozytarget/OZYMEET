@@ -52,7 +52,23 @@ navigator.mediaDevices.getUserMedia({
 }).then(stream => {
     myStream = stream;
     addVideoStream(myVideo, stream, 'You');
+    joinRoom(stream);
+}).catch(err => {
+    console.error("Error accessing media devices:", err);
+    // Show error but allow joining without media
+    if (err.name === 'NotReadableError') {
+        alert("Camera/Mic is in use. Joining without media.");
+    } else if (err.name === 'NotAllowedError') {
+        alert("Permissions denied. Joining without media.");
+    } else if (err.name === 'NotFoundError') {
+        alert("No device found. Joining without media.");
+    } else {
+        alert("Media error: " + err.message + ". Joining without media.");
+    }
+    joinRoom(null);
+});
 
+function joinRoom(stream) {
     socket.emit('join-room', roomId, socket.id, userName);
 
     socket.on('all-users', users => {
@@ -65,7 +81,6 @@ navigator.mediaDevices.getUserMedia({
     socket.on('user-joined', payload => {
         const peer = addPeer(payload.signal, payload.callerID, stream);
         peers[payload.callerID] = { peer };
-        // We will add the video element when the stream arrives
     });
 
     socket.on('receiving-returned-signal', payload => {
@@ -80,18 +95,7 @@ navigator.mediaDevices.getUserMedia({
             delete peers[userId];
         }
     });
-}).catch(err => {
-    console.error("Error accessing media devices:", err);
-    if (err.name === 'NotReadableError') {
-        alert("Could not access camera/microphone. It might be in use by another application (like Zoom or another browser tab). Please close other apps and reload.");
-    } else if (err.name === 'NotAllowedError') {
-        alert("Permissions denied. Please allow camera and microphone access in your browser settings.");
-    } else if (err.name === 'NotFoundError') {
-        alert("No camera or microphone found on this device.");
-    } else {
-        alert("Error accessing media devices: " + err.message + ". Ensure you are using HTTPS.");
-    }
-});
+}
 
 function createPeer(userToSignal, callerID, stream) {
     const peer = new SimplePeer({
