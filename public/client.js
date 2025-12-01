@@ -82,7 +82,15 @@ navigator.mediaDevices.getUserMedia({
     });
 }).catch(err => {
     console.error("Error accessing media devices:", err);
-    alert("Could not access camera/microphone. Please check permissions and ensure you are using HTTPS.");
+    if (err.name === 'NotReadableError') {
+        alert("Could not access camera/microphone. It might be in use by another application (like Zoom or another browser tab). Please close other apps and reload.");
+    } else if (err.name === 'NotAllowedError') {
+        alert("Permissions denied. Please allow camera and microphone access in your browser settings.");
+    } else if (err.name === 'NotFoundError') {
+        alert("No camera or microphone found on this device.");
+    } else {
+        alert("Error accessing media devices: " + err.message + ". Ensure you are using HTTPS.");
+    }
 });
 
 function createPeer(userToSignal, callerID, stream) {
@@ -151,6 +159,10 @@ function addVideoStream(video, stream, name) {
 
 // Controls Logic
 muteBtn.addEventListener('click', () => {
+    if (!myStream) {
+        alert("No audio stream available. Check your microphone permissions.");
+        return;
+    }
     const audioTrack = myStream.getAudioTracks()[0];
     if (audioTrack.enabled) {
         audioTrack.enabled = false;
@@ -166,6 +178,10 @@ muteBtn.addEventListener('click', () => {
 });
 
 videoBtn.addEventListener('click', () => {
+    if (!myStream) {
+        alert("No video stream available. Check your camera permissions or if another app is using it.");
+        return;
+    }
     const videoTrack = myStream.getVideoTracks()[0];
     if (videoTrack.enabled) {
         videoTrack.enabled = false;

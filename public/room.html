@@ -1,101 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
+Loading Market Data...
+</div>
+</div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet Pro - Room</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
-</head>
-
-<body>
-    <!-- Top Bar (Ticker) -->
-    <div class="ticker-container">
-        <div class="ticker-content" id="ticker-content">
-            Loading Market Data...
-        </div>
+<!-- Main Content Area -->
+<div class="main-container">
+    <div class="video-grid-container" id="video-grid">
+        <!-- Videos will be added here dynamically -->
     </div>
 
-    <!-- Main Content Area -->
-    <div class="main-container">
-        <div class="video-grid-container" id="video-grid">
-            <!-- Videos will be added here dynamically -->
+    <!-- Whiteboard Overlay -->
+    <div class="whiteboard-container" id="whiteboard-container">
+        <div class="whiteboard-controls">
+            <button id="clear-board" class="control-btn danger" title="Clear Board"><i
+                    class="fas fa-trash"></i></button>
+            <button id="close-board" class="control-btn" title="Close Board"><i class="fas fa-times"></i></button>
         </div>
-
-        <!-- Whiteboard Overlay -->
-        <div class="whiteboard-container" id="whiteboard-container">
-            <div class="whiteboard-controls">
-                <button id="clear-board" class="control-btn danger" title="Clear Board"><i
-                        class="fas fa-trash"></i></button>
-                <button id="close-board" class="control-btn" title="Close Board"><i class="fas fa-times"></i></button>
-            </div>
-            <canvas id="whiteboard"></canvas>
-        </div>
-
-        <!-- Chat Sidebar -->
-        <div class="chat-container" id="chat-container">
-            <div class="chat-header">
-                <h3>In-call messages</h3>
-                <button id="close-chat" class="control-btn secondary" style="width: 36px; height: 36px;"><i
-                        class="fas fa-times"></i></button>
-            </div>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Send a message to everyone">
-                <button id="send-msg" class="send-btn"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
+        <canvas id="whiteboard"></canvas>
     </div>
 
-    <!-- Footer Controls -->
-    <div class="controls-container">
-        <div class="controls-left">
-            <span id="clock-time">12:00 PM</span>
-            <span class="time-display" id="meeting-code-display">abc-def-ghi</span>
+    <!-- Chat Sidebar -->
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+            <h3>In-call messages</h3>
+            <button id="close-chat" class="control-btn secondary" style="width: 36px; height: 36px;"><i
+                    class="fas fa-times"></i></button>
         </div>
-
-        <div class="controls-center">
-            <button id="mute-btn" class="control-btn" title="Turn off microphone"><i
-                    class="fas fa-microphone"></i></button>
-            <button id="video-btn" class="control-btn" title="Turn off camera"><i class="fas fa-video"></i></button>
-            <button id="screen-share-btn" class="control-btn secondary" title="Present now"><i
-                    class="fas fa-desktop"></i></button>
-            <button id="whiteboard-btn" class="control-btn secondary" title="Whiteboard"><i
-                    class="fas fa-pen"></i></button>
-            <button id="leave-btn" class="control-btn danger leave-btn" title="Leave call"><i
-                    class="fas fa-phone-slash"></i></button>
-        </div>
-
-        <div class="controls-right">
-            <button id="chat-btn" class="control-btn secondary" title="Chat with everyone"><i
-                    class="fas fa-comment-alt"></i></button>
-            <button class="control-btn secondary" title="Activities"><i class="fas fa-shapes"></i></button>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Send a message to everyone">
+            <button id="send-msg" class="send-btn"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
+</div>
 
-    <script src="/live-ticker.js"></script>
-    <script src="/client.js"></script>
-    <script>
-        // Simple Clock
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('clock-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
+<!-- Footer Controls -->
+<div class="controls-container">
+    <div class="controls-left">
+        <span id="clock-time">12:00 PM</span>
+        <span class="time-display" id="meeting-code-display">abc-def-ghi</span>
+    </div>
 
-        // Display Room ID
-        const roomIdDisplay = window.location.pathname.split('/')[2];
-        if (roomIdDisplay) {
-            document.getElementById('meeting-code-display').innerText = roomIdDisplay;
-        }
-    </script>
+    <div class="controls-center">
+        <button id="mute-btn" class="control-btn" title="Turn off microphone"><i class="fas fa-microphone"></i></button>
+        <button id="video-btn" class="control-btn" title="Turn off camera"><i class="fas fa-video"></i></button>
+        <button id="screen-share-btn" class="control-btn secondary" title="Present now"><i
+                class="fas fa-desktop"></i></button>
+        <button id="whiteboard-btn" class="control-btn secondary" title="Whiteboard"><i class="fas fa-pen"></i></button>
+        <button id="leave-btn" class="control-btn danger leave-btn" title="Leave call"><i
+                class="fas fa-phone-slash"></i></button>
+    </div>
+
+    <div class="controls-right">
+        <button id="chat-btn" class="control-btn secondary" title="Chat with everyone"><i
+                class="fas fa-comment-alt"></i></button>
+        <button class="control-btn secondary" title="Activities"><i class="fas fa-shapes"></i></button>
+    </div>
+</div>
+
+<script src="/live-ticker.js"></script>
+<script src="/client.js"></script>
+<script>
+    // Simple Clock
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('clock-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Display Room ID
+    const roomIdDisplay = window.location.pathname.split('/')[2];
+    if (roomIdDisplay) {
+        document.getElementById('meeting-code-display').innerText = roomIdDisplay;
+    }
+</script>
 </body>
 
 </html>
