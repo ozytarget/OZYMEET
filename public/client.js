@@ -10,6 +10,7 @@ const userName = urlParams.get('name') || 'Anonymous';
 
 let myStream;
 let screenStream;
+let isScreenSharing = false;
 
 // Controls
 const muteBtn = document.getElementById('mute-btn');
@@ -30,6 +31,19 @@ const closeBoardBtn = document.getElementById('close-board');
 const clearBoardBtn = document.getElementById('clear-board');
 const canvas = document.getElementById('whiteboard');
 const ctx = canvas.getContext('2d');
+
+// Check for Mobile
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Check for Secure Context (Required for Camera/Mic on Mobile)
+if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1' && location.protocol !== 'https:') {
+    alert('⚠️ WARNING: Camera and Microphone require HTTPS or Localhost. If you are on a mobile device connecting via IP, this will NOT work unless you set up HTTPS.');
+}
+
+// Hide Screen Share on Mobile (Not fully supported in browser web apps)
+if (isMobile || !navigator.mediaDevices.getDisplayMedia) {
+    screenShareBtn.style.display = 'none';
+}
 
 // Initialize
 navigator.mediaDevices.getUserMedia({
@@ -66,6 +80,9 @@ navigator.mediaDevices.getUserMedia({
             delete peers[userId];
         }
     });
+}).catch(err => {
+    console.error("Error accessing media devices:", err);
+    alert("Could not access camera/microphone. Please check permissions and ensure you are using HTTPS.");
 });
 
 function createPeer(userToSignal, callerID, stream) {
@@ -134,14 +151,14 @@ function addVideoStream(video, stream, name) {
 
 // Controls Logic
 muteBtn.addEventListener('click', () => {
-    const enabled = myStream.getAudioTracks()[0].enabled;
-    if (enabled) {
-        myStream.getAudioTracks()[0].enabled = false;
+    const audioTrack = myStream.getAudioTracks()[0];
+    if (audioTrack.enabled) {
+        audioTrack.enabled = false;
         muteBtn.classList.remove('active');
         muteBtn.classList.add('danger');
         muteBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
     } else {
-        myStream.getAudioTracks()[0].enabled = true;
+        audioTrack.enabled = true;
         muteBtn.classList.add('active');
         muteBtn.classList.remove('danger');
         muteBtn.innerHTML = '<i class="fas fa-microphone"></i>';
@@ -149,14 +166,14 @@ muteBtn.addEventListener('click', () => {
 });
 
 videoBtn.addEventListener('click', () => {
-    const enabled = myStream.getVideoTracks()[0].enabled;
-    if (enabled) {
-        myStream.getVideoTracks()[0].enabled = false;
+    const videoTrack = myStream.getVideoTracks()[0];
+    if (videoTrack.enabled) {
+        videoTrack.enabled = false;
         videoBtn.classList.remove('active');
         videoBtn.classList.add('danger');
         videoBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
     } else {
-        myStream.getVideoTracks()[0].enabled = true;
+        videoTrack.enabled = true;
         videoBtn.classList.add('active');
         videoBtn.classList.remove('danger');
         videoBtn.innerHTML = '<i class="fas fa-video"></i>';
@@ -164,7 +181,7 @@ videoBtn.addEventListener('click', () => {
 });
 
 screenShareBtn.addEventListener('click', () => {
-    if (!screenStream) {
+    if (!isScreenSharing) {
         navigator.mediaDevices.getDisplayMedia({ video: true }).then(stream => {
             screenStream = stream;
             const screenTrack = screenStream.getVideoTracks()[0];
@@ -172,16 +189,24 @@ screenShareBtn.addEventListener('click', () => {
             // Replace track for all peers
             for (let peerId in peers) {
                 const peer = peers[peerId].peer;
+                // Safe replacement for SimplePeer
                 const sender = peer._pc.getSenders().find(s => s.track.kind === 'video');
-                sender.replaceTrack(screenTrack);
+                if (sender) {
+                    sender.replaceTrack(screenTrack).catch(err => console.error("Track replacement failed", err));
+                }
             }
 
             screenTrack.onended = () => {
                 stopScreenShare();
             };
 
+            isScreenSharing = true;
             screenShareBtn.classList.add('active');
-            myVideo.srcObject = screenStream; // Show my screen locally
+
+            // Optional: Show my screen in my view
+            myVideo.srcObject = screenStream;
+        }).catch(err => {
+            console.error("Failed to get display media", err);
         });
     } else {
         stopScreenShare();
@@ -192,12 +217,15 @@ function stopScreenShare() {
     if (screenStream) {
         screenStream.getTracks().forEach(track => track.stop());
         screenStream = null;
+        isScreenSharing = false;
 
         const videoTrack = myStream.getVideoTracks()[0];
         for (let peerId in peers) {
             const peer = peers[peerId].peer;
             const sender = peer._pc.getSenders().find(s => s.track.kind === 'video');
-            sender.replaceTrack(videoTrack);
+            if (sender) {
+                sender.replaceTrack(videoTrack).catch(err => console.error("Track replacement failed", err));
+            }
         }
 
         screenShareBtn.classList.remove('active');
@@ -280,10 +308,16 @@ socket.on('clear-canvas', () => {
 let drawing = false;
 let current = { x: 0, y: 0 };
 
+// Touch support for mobile whiteboard
 canvas.addEventListener('mousedown', onMouseDown, false);
 canvas.addEventListener('mouseup', onMouseUp, false);
 canvas.addEventListener('mouseout', onMouseUp, false);
 canvas.addEventListener('mousemove', throttle(onMouseMove, 10), false);
+
+canvas.addEventListener('touchstart', onTouchStart, false);
+canvas.addEventListener('touchend', onMouseUp, false);
+canvas.addEventListener('touchcancel', onMouseUp, false);
+canvas.addEventListener('touchmove', throttle(onTouchMove, 10), false);
 
 function onMouseDown(e) {
     drawing = true;
@@ -291,10 +325,17 @@ function onMouseDown(e) {
     current.y = e.clientY;
 }
 
+function onTouchStart(e) {
+    drawing = true;
+    const touch = e.touches[0];
+    current.x = touch.clientX;
+    current.y = touch.clientY;
+}
+
 function onMouseUp(e) {
     if (!drawing) return;
     drawing = false;
-    drawLine(current.x, current.y, e.clientX, e.clientY, '#ffffff', true);
+    // For mouse up, we don't necessarily draw a final line segment unless we want to close a gap
 }
 
 function onMouseMove(e) {
@@ -302,6 +343,15 @@ function onMouseMove(e) {
     drawLine(current.x, current.y, e.clientX, e.clientY, '#ffffff', true);
     current.x = e.clientX;
     current.y = e.clientY;
+}
+
+function onTouchMove(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    drawLine(current.x, current.y, touch.clientX, touch.clientY, '#ffffff', true);
+    current.x = touch.clientX;
+    current.y = touch.clientY;
 }
 
 function drawLine(x0, y0, x1, y1, color, emit) {
