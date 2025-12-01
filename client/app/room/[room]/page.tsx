@@ -10,11 +10,11 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Track } from "livekit-client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { usePodcastRecording } from "@/hooks/usePodcastRecording";
 
-export default function RoomPage({ params }: { params: { room: string } }) {
-    const room = params.room;
+export default function RoomPage({ params }: { params: Promise<{ room: string }> }) {
+    const { room } = use(params);
     const [token, setToken] = useState("");
     const { isRecording, startRecording, stopRecording } = usePodcastRecording();
 
@@ -58,8 +58,8 @@ export default function RoomPage({ params }: { params: { room: string } }) {
                 <button
                     onClick={isRecording ? stopRecording : startRecording}
                     className={`px-4 py-2 rounded-full font-bold transition-all ${isRecording
-                            ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                            : "bg-zinc-700 hover:bg-zinc-600"
+                        ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                        : "bg-zinc-700 hover:bg-zinc-600"
                         } text-white flex items-center gap-2`}
                 >
                     {isRecording ? (
